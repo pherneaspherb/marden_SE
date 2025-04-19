@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'customerProfilePageEdit.dart'; // <-- Import the EditProfilePage
 
 class CustomerProfilePage extends StatelessWidget {
   @override
@@ -8,9 +9,7 @@ class CustomerProfilePage extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     if (uid == null) {
-      return Scaffold(
-        body: Center(child: Text("User not logged in.")),
-      );
+      return Scaffold(body: Center(child: Text("User not logged in.")));
     }
 
     return Scaffold(
@@ -19,7 +18,8 @@ class CustomerProfilePage extends StatelessWidget {
         backgroundColor: Colors.deepPurple,
       ),
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('customers').doc(uid).get(),
+        future:
+            FirebaseFirestore.instance.collection('customers').doc(uid).get(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -35,23 +35,29 @@ class CustomerProfilePage extends StatelessWidget {
             return Center(child: Text('No user data found.'));
           }
 
-          final displayName = userData['fullName'] ?? 'No Name';
+          final displayName =
+              '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
+                  .trim();
           final phoneNumber = userData['phoneNumber'] ?? 'No Phone';
           final address = userData['address'] ?? 'No Address';
 
           return ListView(
             padding: EdgeInsets.all(16),
             children: [
-              // Profile Card
               Card(
                 elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: Colors.deepPurple,
                     child: Icon(Icons.person, color: Colors.white),
                   ),
-                  title: Text(displayName, style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    displayName,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -64,25 +70,25 @@ class CustomerProfilePage extends StatelessWidget {
               ),
               SizedBox(height: 24),
 
-              // Settings Section
-              Text("General", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                "General",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
               ListTile(
                 title: Text("Account Settings"),
-                onTap: () {}, // future nav
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => EditProfilePage()),
+                  );
+                },
               ),
               Divider(),
-              ListTile(
-                title: Text("Payment Methods"),
-                onTap: () {},
-              ),
+              ListTile(title: Text("Payment Methods"), onTap: () {}),
               Divider(),
-              ListTile(
-                title: Text("Notifications & Reminders"),
-                onTap: () {},
-              ),
+              ListTile(title: Text("Notifications & Reminders"), onTap: () {}),
               Divider(),
 
-              // Log out
               ListTile(
                 leading: Icon(Icons.logout),
                 title: Text("Log Out"),
@@ -94,20 +100,6 @@ class CustomerProfilePage extends StatelessWidget {
             ],
           );
         },
-      ),
-
-      // Bottom Nav (Profile Selected)
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 3,
-        backgroundColor: Colors.deepPurple,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white60,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.call), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-        ],
       ),
     );
   }
