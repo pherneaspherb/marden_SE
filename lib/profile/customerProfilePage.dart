@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'customerProfilePageEdit.dart';
-import 'customerChangePasswordPage.dart';
+import 'customerAccountSettingsPage.dart';
+import 'customerNotificationsPage.dart'; // <-- you'll create this
 import '../screens/customerLoginPage.dart';
 
 class CustomerProfilePage extends StatelessWidget {
@@ -19,14 +19,14 @@ class CustomerProfilePage extends StatelessWidget {
         title: Text('Profile'),
         backgroundColor: Colors.deepPurple,
       ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('customers').doc(uid).get(),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('customers').doc(uid).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (!snapshot.hasData || !snapshot.data!.exists) {
             return Center(child: CircularProgressIndicator());
           }
 
@@ -66,39 +66,32 @@ class CustomerProfilePage extends StatelessWidget {
               ),
               SizedBox(height: 24),
 
-              Text("Account Settings", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text("General", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
 
               ListTile(
-                leading: Icon(Icons.person),
-                title: Text("Account Information"),
+                leading: Icon(Icons.settings),
+                title: Text("Account Settings"),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => EditProfilePage()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => CustomerAccountSettingsPage()));
                 },
               ),
               Divider(),
 
               ListTile(
-                leading: Icon(Icons.lock),
-                title: Text("Change Password"),
+                leading: Icon(Icons.notifications),
+                title: Text("Notifications & Reminders"),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ChangePasswordPage()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => CustomerNotificationsPage()));
                 },
               ),
               Divider(),
 
-              ListTile(
-                leading: Icon(Icons.delete),
-                title: Text("Delete Account"),
-                onTap: () {
-                  _showDeleteConfirmation(context);
-                },
-              ),
-              Divider(),
+              SizedBox(height: 40),
 
               ListTile(
                 leading: Icon(Icons.logout),
-                title: Text("Log Out"),
+                title: Text("Log Out", style: TextStyle(fontWeight: FontWeight.bold)),
                 onTap: () {
                   _showLogoutConfirmation(context);
                 },
@@ -106,50 +99,6 @@ class CustomerProfilePage extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Delete Account'),
-        content: Text('Are you sure you want to delete your account? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                final user = FirebaseAuth.instance.currentUser;
-                final uid = user?.uid;
-
-                // Delete Firestore document
-                if (uid != null) {
-                  await FirebaseFirestore.instance.collection('customers').doc(uid).delete();
-                }
-
-                // Delete Auth account
-                await user?.delete();
-
-                // Navigate back to login
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => CustomerLoginPage()),
-                  (route) => false,
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed to delete account: $e')),
-                );
-              }
-            },
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
       ),
     );
   }
@@ -167,9 +116,8 @@ class CustomerProfilePage extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context); // Close the dialog first
+              Navigator.pop(context);
               await FirebaseAuth.instance.signOut();
-
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => CustomerLoginPage()),
