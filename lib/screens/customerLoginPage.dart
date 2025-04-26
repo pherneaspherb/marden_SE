@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'customerMainPage.dart';
+import '../home/customerMainPage.dart';
 import 'customerSignUpPage.dart';
 
 class CustomerLoginPage extends StatefulWidget {

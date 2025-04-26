@@ -3,9 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'customerHomePage.dart';
-import 'customerOrdersPage.dart';
-import 'customerTransactionsPage.dart';
-import 'customerProfilePage.dart';
+import '../order/customerOrdersPage.dart';
+import '../screens/customerTransactionsPage.dart';
+import '../profile/customerProfilePage.dart';
 
 class CustomerMainPage extends StatefulWidget {
   @override

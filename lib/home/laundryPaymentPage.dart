@@ -50,14 +50,19 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
   }
 
   Future<void> _placeOrder() async {
+    print('Place order clicked'); // 🖨️
+
     if (streetController.text.isEmpty ||
         barangayController.text.isEmpty ||
         municipalityController.text.isEmpty ||
         cityController.text.isEmpty ||
         paymentMethod.isEmpty) {
+      print('Validation failed: Address fields or payment missing'); // 🖨️
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please complete all address fields and select a payment method.'),
+          content: Text(
+            'Please complete all address fields and select a payment method.',
+          ),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -65,7 +70,12 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
     }
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
+    print('Fetched uid: $uid'); // 🖨️
+
+    if (uid == null) {
+      print('UID is null, user not logged in'); // 🖨️
+      return;
+    }
 
     final orderData = {
       'serviceType': widget.serviceType,
@@ -80,26 +90,29 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
       'instructions': instructionsController.text,
       'totalAmount': totalAmount,
       'createdAt': FieldValue.serverTimestamp(),
+      'status': 'Pending',
     };
 
     try {
       setState(() => isPlacingOrder = true);
+      print('Attempting to save orderData to Firestore'); // 🖨️
 
       await FirebaseFirestore.instance
-          .collection('users')
+          .collection('customers')
           .doc(uid)
           .collection('laundryOrders')
           .add(orderData);
 
       setState(() => isPlacingOrder = false);
+      print('Order placed successfully'); // 🖨️
 
       _showSuccessDialog();
     } catch (e) {
       setState(() => isPlacingOrder = false);
-      print('Failed to place order: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to place order')),
-      );
+      print('Failed to place order: $e'); // 🖨️
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to place order')));
     }
   }
 
@@ -107,54 +120,63 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.deepPurple,
-                child: Icon(Icons.check, color: Colors.white, size: 30),
+      builder:
+          (_) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 40.0,
+                horizontal: 24.0,
               ),
-              SizedBox(height: 20),
-              Text(
-                'Your order has been processed.',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Please track your order.',
-                style: TextStyle(fontSize: 14, color: Colors.black54),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // close dialog
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => CustomerMainPage()),
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.deepPurple,
+                    child: Icon(Icons.check, color: Colors.white, size: 30),
                   ),
-                ),
-                child: Text("Done", style: TextStyle(fontSize: 16)),
+                  SizedBox(height: 20),
+                  Text(
+                    'Your order has been processed.',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Please track your order.',
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // close dialog
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => CustomerMainPage()),
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: Text("Done", style: TextStyle(fontSize: 16)),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -169,14 +191,26 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
         padding: const EdgeInsets.all(20),
         child: ListView(
           children: [
-            Text('Address', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'Address',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 10),
-            _buildTextField(controller: streetController, label: 'House No. / Street'),
+            _buildTextField(
+              controller: streetController,
+              label: 'House No. / Street',
+            ),
             _buildTextField(controller: barangayController, label: 'Barangay'),
-            _buildTextField(controller: municipalityController, label: 'Municipality'),
+            _buildTextField(
+              controller: municipalityController,
+              label: 'Municipality',
+            ),
             _buildTextField(controller: cityController, label: 'City'),
             SizedBox(height: 20),
-            Text('Payment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'Payment',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             _buildRadioOption('Cash', Icons.money),
             _buildRadioOption('G-Cash', Icons.phone_android),
             SizedBox(height: 20),
@@ -194,9 +228,14 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('₱ ${totalAmount.toStringAsFixed(2)}',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  'TOTAL',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '₱ ${totalAmount.toStringAsFixed(2)}',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             SizedBox(height: 30),
@@ -207,17 +246,21 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 15),
               ),
-              child: isPlacingOrder
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text('Place an Order', style: TextStyle(fontSize: 16)),
-            )
+              child:
+                  isPlacingOrder
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text('Place an Order', style: TextStyle(fontSize: 16)),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String label}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(

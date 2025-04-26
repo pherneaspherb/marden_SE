@@ -25,6 +25,7 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
   final TextEditingController _municipalityController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _instructionsController = TextEditingController();
+
   String _selectedPaymentMethod = 'Cash';
   bool isDefaultAddress = false;
   bool _isLoading = false;
@@ -50,10 +51,16 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
     };
 
     await FirebaseFirestore.instance
-        .collection('users')
+        .collection('customers')
         .doc(userId)
         .collection('waterOrders')
-        .add(orderData);
+        .add(orderData)
+        .then((docRef) {
+          print('✅ Order saved successfully! Document ID: ${docRef.id}');
+        })
+        .catchError((error) {
+          print('❌ Failed to save order: $error');
+        });
   }
 
   void _placeOrder() async {
@@ -88,16 +95,19 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
   void _showMissingFieldsDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Incomplete Address'),
-        content: Text('Please fill in all required address fields to proceed.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Incomplete Address'),
+            content: Text(
+              'Please fill in all required address fields to proceed.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -107,10 +117,15 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           backgroundColor: Color(0xFFF7ECFF),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -122,10 +137,7 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
                 SizedBox(height: 16),
                 Text(
                   'Your order has been processed.',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 8),
@@ -138,7 +150,9 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => CustomerMainPage()),
+                      MaterialPageRoute(
+                        builder: (context) => CustomerMainPage(),
+                      ),
                       (route) => false,
                     );
                   },
@@ -151,7 +165,7 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -280,23 +294,24 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                child: _isLoading
-                    ? SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+                child:
+                    _isLoading
+                        ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : Text(
+                          'Place an Order',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      )
-                    : Text(
-                        'Place an Order',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
               ),
             ),
           ],

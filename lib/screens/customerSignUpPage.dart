@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'customerLoginPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'customerMainPage.dart';
+import '../home/customerMainPage.dart';
 
 class CustomerSignUpPage extends StatefulWidget {
   @override
@@ -14,6 +14,8 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneNumberController = TextEditingController(); // Added
+  final _addressController = TextEditingController(); // Added
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -30,9 +32,7 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
         final email = _emailController.text.trim();
         print("📨 Email: $email");
 
-        final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(
-          email,
-        );
+        final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
         print("📩 Sign-in methods: $methods");
 
         if (methods.isNotEmpty) {
@@ -55,7 +55,6 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
         if (credential.user == null) {
           throw Exception("User creation failed — user is null");
         }
-            '${_firstNameController.text} ${_lastNameController.text}';
         print("📤 Saving user info to Firestore...");
 
         await FirebaseFirestore.instance
@@ -65,6 +64,8 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
               'firstName': _firstNameController.text.trim(),
               'lastName': _lastNameController.text.trim(),
               'email': email,
+              'phoneNumber': _phoneNumberController.text.trim(), // Added
+              'address': _addressController.text.trim(), // Added
               'role': 'customer',
               'createdAt': Timestamp.now(),
             });
@@ -146,6 +147,8 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
                     _buildTextField(_firstNameController, 'First Name'),
                     _buildTextField(_lastNameController, 'Last Name'),
                     _buildTextField(_emailController, 'Email'),
+                    _buildTextField(_phoneNumberController, 'Phone Number', isNumber: true), // Added
+                    _buildTextField(_addressController, 'Address'), // Added
                     _buildTextField(
                       _passwordController,
                       'Password',
@@ -167,17 +170,16 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
                           vertical: 15,
                         ),
                       ),
-                      child:
-                          _isLoading
-                              ? SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : Text('Sign Up'),
+                      child: _isLoading
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text('Sign Up'),
                     ),
                   ],
                 ),
@@ -199,12 +201,11 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        keyboardType:
-            isNumber
-                ? TextInputType.phone
-                : (label == 'Email'
-                    ? TextInputType.emailAddress
-                    : TextInputType.text),
+        keyboardType: isNumber
+            ? TextInputType.phone
+            : (label == 'Email'
+                ? TextInputType.emailAddress
+                : TextInputType.text),
         obscureText: isPassword,
         decoration: InputDecoration(
           labelText: label,
@@ -218,9 +219,11 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
           if (label == 'Password' && value.length < 6) {
             return 'Password must be at least 6 characters';
           }
-          if (label == 'Confirm Password' &&
-              value != _passwordController.text) {
+          if (label == 'Confirm Password' && value != _passwordController.text) {
             return 'Passwords do not match';
+          }
+          if (label == 'Phone Number' && value.length < 10) {
+            return 'Enter a valid phone number';
           }
           return null;
         },
