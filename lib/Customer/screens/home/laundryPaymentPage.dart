@@ -27,20 +27,21 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
   final cityController = TextEditingController();
   final instructionsController = TextEditingController();
 
-  String paymentMethod = '';
   double totalAmount = 0.0;
   bool isPlacingOrder = false;
+  bool saveAsDefault = false;
 
   @override
   void initState() {
     super.initState();
     _calculateTotal();
+    _loadDefaultAddress(); // Load default address during initialization
   }
 
   void _calculateTotal() {
-    const double baseRate = 50.0;
-    const double softenerFee = 10.0;
-    const double foldFee = 15.0;
+    const baseRate = 50.0;
+    const softenerFee = 10.0;
+    const foldFee = 15.0;
 
     double total = widget.weight * baseRate;
     if (widget.extras.contains('Fabric Softener')) total += softenerFee;
@@ -49,20 +50,38 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
     setState(() => totalAmount = total);
   }
 
-  Future<void> _placeOrder() async {
-    print('Place order clicked'); // 🖨️
+  Future<void> _loadDefaultAddress() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
 
-    if (streetController.text.isEmpty ||
-        barangayController.text.isEmpty ||
-        municipalityController.text.isEmpty ||
-        cityController.text.isEmpty ||
-        paymentMethod.isEmpty) {
-      print('Validation failed: Address fields or payment missing'); // 🖨️
+    try {
+      final customerDoc = await FirebaseFirestore.instance.collection('customers').doc(uid).get();
+      final defaultAddress = customerDoc.data()?['defaultAddress'];
+
+      if (defaultAddress != null) {
+        streetController.text = defaultAddress['street'] ?? '';
+        barangayController.text = defaultAddress['barangay'] ?? '';
+        municipalityController.text = defaultAddress['municipality'] ?? '';
+        cityController.text = defaultAddress['city'] ?? '';
+        setState(() {
+          saveAsDefault = true;
+        });
+      }
+    } catch (e) {
+      print("Failed to load default address: $e");
+    }
+  }
+
+  Future<void> _placeOrder() async {
+    final street = streetController.text.trim();
+    final barangay = barangayController.text.trim();
+    final municipality = municipalityController.text.trim();
+    final city = cityController.text.trim();
+
+    if (street.isEmpty || barangay.isEmpty || municipality.isEmpty || city.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please complete all address fields and select a payment method.',
-          ),
+          content: Text('Please fill out all required address fields.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -70,10 +89,13 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
     }
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    print('Fetched uid: $uid'); // 🖨️
-
     if (uid == null) {
-      print('UID is null, user not logged in'); // 🖨️
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('User not logged in.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
       return;
     }
 
@@ -82,12 +104,12 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
       'extras': widget.extras,
       'weight': widget.weight,
       'deliveryMode': widget.deliveryMode,
-      'address': streetController.text,
-      'barangay': barangayController.text,
-      'municipality': municipalityController.text,
-      'city': cityController.text,
-      'paymentMethod': paymentMethod,
-      'instructions': instructionsController.text,
+      'address': street,
+      'barangay': barangay,
+      'municipality': municipality,
+      'city': city,
+      'paymentMethod': 'Cash',
+      'instructions': instructionsController.text.trim(),
       'totalAmount': totalAmount,
       'createdAt': FieldValue.serverTimestamp(),
       'status': 'Pending',
@@ -95,24 +117,29 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
 
     try {
       setState(() => isPlacingOrder = true);
-      print('Attempting to save orderData to Firestore'); // 🖨️
 
-      await FirebaseFirestore.instance
-          .collection('customers')
-          .doc(uid)
-          .collection('laundryOrders')
-          .add(orderData);
+      final customerRef = FirebaseFirestore.instance.collection('customers').doc(uid);
 
-      setState(() => isPlacingOrder = false);
-      print('Order placed successfully'); // 🖨️
+      await customerRef.collection('laundryOrders').add(orderData);
+
+      if (saveAsDefault) {
+        await customerRef.set({
+          'defaultAddress': {
+            'street': street,
+            'barangay': barangay,
+            'municipality': municipality,
+            'city': city,
+          }
+        }, SetOptions(merge: true));
+      }
 
       _showSuccessDialog();
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to place order: $e')),
+      );
+    } finally {
       setState(() => isPlacingOrder = false);
-      print('Failed to place order: $e'); // 🖨️
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to place order')));
     }
   }
 
@@ -120,155 +147,52 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (_) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 40.0,
-                horizontal: 24.0,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.deepPurple,
-                    child: Icon(Icons.check, color: Colors.white, size: 30),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Your order has been processed.',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Please track your order.',
-                    style: TextStyle(fontSize: 14, color: Colors.black54),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // close dialog
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (_) => CustomerMainPage()),
-                        (route) => false,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Text("Done", style: TextStyle(fontSize: 16)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text(
-          'Laundry Hub',
-          style: TextStyle(
-            fontFamily: 'Poppins', // Replace with the actual font family name
-            fontWeight: FontWeight.w600, // You can use w400, w500, w700, etc.
-            fontSize: 20,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
-          children: [
-            Text(
-              'Address',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            _buildTextField(
-              controller: streetController,
-              label: 'House No. / Street',
-            ),
-            _buildTextField(controller: barangayController, label: 'Barangay'),
-            _buildTextField(
-              controller: municipalityController,
-              label: 'Municipality',
-            ),
-            _buildTextField(controller: cityController, label: 'City'),
-            SizedBox(height: 20),
-            Text(
-              'Payment',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            _buildRadioOption('Cash', Icons.money),
-            SizedBox(height: 20),
-            Text('Additional Instructions:', style: TextStyle(fontSize: 16)),
-            SizedBox(height: 5),
-            TextField(
-              controller: instructionsController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Type something here...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'TOTAL',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '₱ ${totalAmount.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: isPlacingOrder ? null : _placeOrder,
-              style: ElevatedButton.styleFrom(
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 30,
                 backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 15),
+                child: Icon(Icons.check, color: Colors.white, size: 30),
               ),
-              child:
-                  isPlacingOrder
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Place an Order', style: TextStyle(fontSize: 16)),
-            ),
-          ],
+              SizedBox(height: 20),
+              Text('Your order has been processed.',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center),
+              SizedBox(height: 10),
+              Text('Please track your order.',
+                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                  textAlign: TextAlign.center),
+              SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => CustomerMainPage()),
+                    (route) => false,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
+                child: Text("Done", style: TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-  }) {
+  Widget _buildTextField({required TextEditingController controller, required String label}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
@@ -281,12 +205,73 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
     );
   }
 
-  Widget _buildRadioOption(String title, IconData icon) {
-    return RadioListTile(
-      title: Row(children: [Icon(icon), SizedBox(width: 10), Text(title)]),
-      value: title,
-      groupValue: paymentMethod,
-      onChanged: (val) => setState(() => paymentMethod = val.toString()),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('Laundry Hub',
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 20, color: Colors.white)),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ListView(
+          children: [
+            Text('Address', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+            _buildTextField(controller: streetController, label: 'House No. / Street'),
+            _buildTextField(controller: barangayController, label: 'Barangay'),
+            _buildTextField(controller: municipalityController, label: 'Municipality'),
+            _buildTextField(controller: cityController, label: 'City'),
+
+            CheckboxListTile(
+              title: Text('Save as default address'),
+              value: saveAsDefault,
+              onChanged: (val) => setState(() => saveAsDefault = val ?? false),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+
+            SizedBox(height: 20),
+            Text('Payment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.warning, color: Colors.orange, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Note: This business currently accepts Cash on Delivery (COD) only.',
+                    style: TextStyle(color: Colors.orange[800], fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('₱ ${totalAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
+            ),
+
+            SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: isPlacingOrder ? null : _placeOrder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 15),
+              ),
+              child: isPlacingOrder
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Text('Place an Order', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

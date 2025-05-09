@@ -16,23 +16,29 @@ class WaterPaymentPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _WaterPaymentPageState createState() => _WaterPaymentPageState();
+  State<WaterPaymentPage> createState() => _WaterPaymentPageState();
 }
 
 class _WaterPaymentPageState extends State<WaterPaymentPage> {
-  final TextEditingController _houseController = TextEditingController();
-  final TextEditingController _barangayController = TextEditingController();
-  final TextEditingController _municipalityController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _instructionsController = TextEditingController();
+  final _houseController = TextEditingController();
+  final _barangayController = TextEditingController();
+  final _municipalityController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _instructionsController = TextEditingController();
 
-  String _selectedPaymentMethod = 'Cash';
-  bool isDefaultAddress = false;
-  bool _isLoading = false;
+  bool _isPlacingOrder = false;
 
-  Future<void> _saveWaterOrderToFirestore() async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) return;
+  Future<void> _placeOrder() async {
+    if (_houseController.text.isEmpty ||
+        _barangayController.text.isEmpty ||
+        _municipalityController.text.isEmpty ||
+        _cityController.text.isEmpty) {
+      _showSnackbar('Please complete all address fields.', isError: true);
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
     final orderData = {
       'containerType': widget.selectedContainer,
@@ -44,144 +50,104 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
         'municipality': _municipalityController.text,
         'city': _cityController.text,
       },
-      'paymentMethod': _selectedPaymentMethod,
+      'paymentMethod': 'Cash',
       'instructions': _instructionsController.text,
       'status': 'Pending',
       'createdAt': FieldValue.serverTimestamp(),
     };
 
-    await FirebaseFirestore.instance
-        .collection('customers')
-        .doc(userId)
-        .collection('waterOrders')
-        .add(orderData)
-        .then((docRef) {
-          print('✅ Order saved successfully! Document ID: ${docRef.id}');
-        })
-        .catchError((error) {
-          print('❌ Failed to save order: $error');
-        });
-  }
-
-  void _placeOrder() async {
-    if (_houseController.text.isEmpty ||
-        _barangayController.text.isEmpty ||
-        _municipalityController.text.isEmpty ||
-        _cityController.text.isEmpty) {
-      _showMissingFieldsDialog();
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isPlacingOrder = true);
 
     try {
-      await _saveWaterOrderToFirestore();
+      await FirebaseFirestore.instance
+          .collection('customers')
+          .doc(user.uid)
+          .collection('waterOrders')
+          .add(orderData);
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      showOrderConfirmationDialog(context);
+      _showSuccessDialog();
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      print('Failed to place order: $e');
+      _showSnackbar('Failed to place order');
+    } finally {
+      setState(() => _isPlacingOrder = false);
     }
   }
 
-  void _showMissingFieldsDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Incomplete Address'),
-            content: Text(
-              'Please fill in all required address fields to proceed.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('OK'),
-              ),
-            ],
-          ),
+  void _showSnackbar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+      ),
     );
   }
 
-  void showOrderConfirmationDialog(BuildContext context) {
+  void _showSuccessDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          backgroundColor: Color(0xFFF7ECFF),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-              vertical: 32.0,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.deepPurple,
+                child: Icon(Icons.check, color: Colors.white, size: 30),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Your order has been processed.',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Please track your order.',
+                style: TextStyle(fontSize: 14, color: Colors.black54),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => CustomerMainPage()),
+                    (route) => false,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
-                  radius: 30,
-                  child: Icon(Icons.check, color: Colors.white, size: 30),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Your order has been processed.',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Please track your order.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) => CustomerMainPage(),
-                      ),
-                      (route) => false,
-                    );
-                  },
-                  child: Text('Done'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-              ],
-            ),
+                child: const Text("Done", style: TextStyle(fontSize: 16)),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
       ),
     );
@@ -192,119 +158,69 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.deepPurple,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text(
-          'Water Station',
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          'Water Delivery',
           style: TextStyle(
-            fontFamily: 'Poppins', // Replace with the actual font family name
-            fontWeight: FontWeight.w600, // You can use w400, w500, w700, etc.
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
             fontSize: 20,
             color: Colors.white,
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ListView(
           children: [
-            Text('Address', style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
+            const Text('Address', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            _buildTextField(controller: _houseController, label: 'House No. / Street'),
+            _buildTextField(controller: _barangayController, label: 'Barangay'),
+            _buildTextField(controller: _municipalityController, label: 'Municipality'),
+            _buildTextField(controller: _cityController, label: 'City'),
+            const SizedBox(height: 20),
+
+            const Text('Payment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Text('Set default address'),
-                Spacer(),
-                Checkbox(
-                  value: isDefaultAddress,
-                  onChanged: (value) {
-                    setState(() {
-                      isDefaultAddress = value!;
-                    });
-                  },
+                const Icon(Icons.warning, color: Colors.orange, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Note: This business currently accepts Cash on Delivery (COD) only.',
+                    style: TextStyle(
+                      color: Colors.orange[800],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ],
             ),
-            _buildTextField('House No. / Street', _houseController),
-            _buildTextField('Barangay', _barangayController),
-            _buildTextField('Municipality', _municipalityController),
-            _buildTextField('City', _cityController),
-            SizedBox(height: 20),
-            Text('Payment', style: TextStyle(fontWeight: FontWeight.bold)),
-            RadioListTile(
-              title: Row(
-                children: [
-                  Icon(Icons.attach_money),
-                  SizedBox(width: 8),
-                  Text('Cash'),
-                ],
-              ),
-              value: 'Cash',
-              groupValue: _selectedPaymentMethod,
-              onChanged: (value) {
-                setState(() {
-                  _selectedPaymentMethod = value!;
-                });
-              },
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Additional Instructions:',
-              style: TextStyle(fontStyle: FontStyle.italic),
-            ),
-            SizedBox(height: 8),
-            TextField(
-              controller: _instructionsController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Type something here...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 30),
+            const SizedBox(height: 20),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'TOTAL',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Text(
-                  '₱${widget.totalPrice.toStringAsFixed(2)}',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                const Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('₱ ${widget.totalPrice.toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
-            SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _placeOrder,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child:
-                    _isLoading
-                        ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                        : Text(
-                          'Place an Order',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+            const SizedBox(height: 30),
+
+            ElevatedButton(
+              onPressed: _isPlacingOrder ? null : _placeOrder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
               ),
+              child: _isPlacingOrder
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Place an Order', style: TextStyle(fontSize: 16)),
             ),
           ],
         ),

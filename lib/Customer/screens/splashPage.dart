@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'selectUserPage.dart';
+import 'customerPage.dart';
 
 class SplashPage extends StatelessWidget {
   @override
@@ -7,7 +7,7 @@ class SplashPage extends StatelessWidget {
     Future.delayed(Duration(seconds: 2), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => SelectUserPage()),
+        MaterialPageRoute(builder: (context) => CustomerPage()),
       );
     });
 
