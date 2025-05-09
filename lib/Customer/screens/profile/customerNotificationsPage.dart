@@ -13,9 +13,19 @@ class _CustomerNotificationsPageState extends State<CustomerNotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(color: Colors.white),
-        title: Text('Notifications', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(
+          color: Colors.white,
+        ), // sets back arrow color to white
+        title: Text(
+          'Notifications',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: ListView(
         children: [

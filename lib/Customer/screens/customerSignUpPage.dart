@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'customerLoginPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../home/customerMainPage.dart';
+import 'home/customerMainPage.dart';
 
 class CustomerSignUpPage extends StatefulWidget {
   @override

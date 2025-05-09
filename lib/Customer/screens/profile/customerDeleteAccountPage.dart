@@ -72,8 +72,19 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Delete Account'),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(
+          color: Colors.white,
+        ), // sets back arrow color to white
+        title: Text(
+          'Delete Account',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Center(
         child: _isDeleting

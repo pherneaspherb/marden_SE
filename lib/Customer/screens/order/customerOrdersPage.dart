@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/customerTransactionDetailsPage.dart';
+import '../customerTransactionDetailsPage.dart';
 
 class CustomerOrdersPage extends StatelessWidget {
   @override
@@ -16,18 +16,40 @@ class CustomerOrdersPage extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Orders'),
           backgroundColor: Colors.deepPurple,
+          iconTheme: IconThemeData(
+            color: Colors.white,
+          ), // sets back arrow color to white
+          title: Text(
+            'Orders',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              color: Colors.white,
+            ),
+          ),
           bottom: TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white60,
             indicatorColor: Colors.white,
             tabs: [
-              Tab(text: 'Laundry'),
-              Tab(text: 'Water'),
+              Tab(
+                child: Text(
+                  'Laundry',
+                  style: TextStyle(fontSize: 16), // Adjust font size here
+                ),
+              ),
+              Tab(
+                child: Text(
+                  'Water',
+                  style: TextStyle(fontSize: 16), // Adjust font size here
+                ),
+              ),
             ],
           ),
         ),
+
         body: TabBarView(
           children: [
             _buildLaundryOrders(context, uid),
@@ -52,18 +74,24 @@ class CustomerOrdersPage extends StatelessWidget {
 
   Widget _buildLaundryOrders(BuildContext context, String uid) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('laundryOrders')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance
+              .collection(
+                'customers',
+              ) // 🔥 corrected from 'users' to 'customers'
+              .doc(uid)
+              .collection('laundryOrders')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
-        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+        if (snapshot.hasError)
+          return Center(child: Text('Error: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting)
+          return Center(child: CircularProgressIndicator());
 
         final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) return Center(child: Text('No laundry orders found.'));
+        if (docs.isEmpty)
+          return Center(child: Text('No laundry orders found.'));
 
         return ListView.builder(
           padding: EdgeInsets.all(16),
@@ -71,19 +99,22 @@ class CustomerOrdersPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
             return InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TransactionDetailsPage(
-                    orderData: data,
-                    orderType: 'Laundry Hub',
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => TransactionDetailsPage(
+                            orderData: data,
+                            orderType: 'Laundry Hub',
+                          ),
+                    ),
                   ),
-                ),
-              ),
               child: _buildOrderCard(
                 icon: Icons.local_laundry_service,
                 title: 'Your laundry is being processed.',
-                subtitle: 'To pay: ₱${data['totalAmount']} via ${data['paymentMethod']}',
+                subtitle:
+                    'To pay: ₱${data['totalAmount']} via ${data['paymentMethod']}',
               ),
             );
           },
@@ -94,15 +125,20 @@ class CustomerOrdersPage extends StatelessWidget {
 
   Widget _buildWaterOrders(BuildContext context, String uid) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('waterOrders')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance
+              .collection(
+                'customers',
+              ) // 🔥 corrected from 'users' to 'customers'
+              .doc(uid)
+              .collection('waterOrders')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
-        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+        if (snapshot.hasError)
+          return Center(child: Text('Error: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting)
+          return Center(child: CircularProgressIndicator());
 
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) return Center(child: Text('No water orders found.'));
@@ -113,19 +149,22 @@ class CustomerOrdersPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
             return InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TransactionDetailsPage(
-                    orderData: data,
-                    orderType: 'Water Station',
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => TransactionDetailsPage(
+                            orderData: data,
+                            orderType: 'Water Station',
+                          ),
+                    ),
                   ),
-                ),
-              ),
               child: _buildOrderCard(
                 icon: Icons.local_drink,
                 title: 'Your water is being processed.',
-                subtitle: 'To pay: ₱${data['totalPrice']} via ${data['paymentMethod']}',
+                subtitle:
+                    'To pay: ₱${data['totalPrice']} via ${data['paymentMethod']}',
               ),
             );
           },

@@ -191,9 +191,17 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Water Station'),
         backgroundColor: Colors.deepPurple,
-        leading: BackButton(),
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text(
+          'Water Station',
+          style: TextStyle(
+            fontFamily: 'Poppins', // Replace with the actual font family name
+            fontWeight: FontWeight.w600, // You can use w400, w500, w700, etc.
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
@@ -231,22 +239,6 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
                 ],
               ),
               value: 'Cash',
-              groupValue: _selectedPaymentMethod,
-              onChanged: (value) {
-                setState(() {
-                  _selectedPaymentMethod = value!;
-                });
-              },
-            ),
-            RadioListTile(
-              title: Row(
-                children: [
-                  Icon(Icons.phone_android),
-                  SizedBox(width: 8),
-                  Text('G-Cash'),
-                ],
-              ),
-              value: 'G-Cash',
               groupValue: _selectedPaymentMethod,
               onChanged: (value) {
                 setState(() {

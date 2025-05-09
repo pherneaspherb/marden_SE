@@ -22,7 +22,9 @@ class _WaterStationPageState extends State<WaterStationPage> {
   }
 
   bool get isOrderFormValid =>
-      _selectedContainer.isNotEmpty && _quantity > 0 && _deliveryMode.isNotEmpty;
+      _selectedContainer.isNotEmpty &&
+      _quantity > 0 &&
+      _deliveryMode.isNotEmpty;
 
   void _proceedToPayment() {
     double unitPrice = _getContainerPrice(_selectedContainer);
@@ -31,11 +33,12 @@ class _WaterStationPageState extends State<WaterStationPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => WaterPaymentPage(
-          selectedContainer: '$_quantity x $_selectedContainer',
-          totalPrice: totalPrice,
-          deliveryMode: _deliveryMode,
-        ),
+        builder:
+            (context) => WaterPaymentPage(
+              selectedContainer: '$_quantity x $_selectedContainer',
+              totalPrice: totalPrice,
+              deliveryMode: _deliveryMode,
+            ),
       ),
     );
   }
@@ -44,15 +47,27 @@ class _WaterStationPageState extends State<WaterStationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Water Station'),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text(
+          'Water Station',
+          style: TextStyle(
+            fontFamily: 'Poppins', // Replace with the actual font family name
+            fontWeight: FontWeight.w600, // You can use w400, w500, w700, etc.
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: ListView(
             children: [
-              Text('Select a container', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Select a container',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -90,7 +105,10 @@ class _WaterStationPageState extends State<WaterStationPage> {
                 ],
               ),
               SizedBox(height: 24),
-              Text('Mode of Delivery', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Mode of Delivery',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               RadioListTile(
                 title: Text('Pick Up'),
                 value: 'Pick Up',
@@ -109,13 +127,19 @@ class _WaterStationPageState extends State<WaterStationPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   padding: EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: Text(
                   'Proceed to Payment',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -128,7 +152,8 @@ class _WaterStationPageState extends State<WaterStationPage> {
     return ElevatedButton(
       onPressed: () => setState(() => _selectedContainer = label),
       style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.deepPurple : Colors.deepPurple[100],
+        backgroundColor:
+            isSelected ? Colors.deepPurple : Colors.deepPurple[100],
         foregroundColor: Colors.white,
         minimumSize: Size(130, 100),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

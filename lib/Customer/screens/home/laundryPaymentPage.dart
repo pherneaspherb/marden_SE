@@ -184,8 +184,17 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Laundry Hub'),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text(
+          'Laundry Hub',
+          style: TextStyle(
+            fontFamily: 'Poppins', // Replace with the actual font family name
+            fontWeight: FontWeight.w600, // You can use w400, w500, w700, etc.
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -212,7 +221,6 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             _buildRadioOption('Cash', Icons.money),
-            _buildRadioOption('G-Cash', Icons.phone_android),
             SizedBox(height: 20),
             Text('Additional Instructions:', style: TextStyle(fontSize: 16)),
             SizedBox(height: 5),

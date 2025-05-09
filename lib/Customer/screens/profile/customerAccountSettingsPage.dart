@@ -3,15 +3,26 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'customerProfilePageEdit.dart';
 import 'customerChangePasswordPage.dart';
-import '../screens/customerLoginPage.dart'; // <-- you forgot this!
+import '../customerLoginPage.dart'; // <-- you forgot this!
 
 class CustomerAccountSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Account Settings'),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(
+          color: Colors.white,
+        ), // sets back arrow color to white
+        title: Text(
+          'Account Settings',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: ListView(
         padding: EdgeInsets.all(16),

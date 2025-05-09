@@ -27,29 +27,48 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
 
   Widget _buildServiceButton(String label, IconData icon) {
     final isSelected = selectedService == label;
+
+    Gradient? gradient;
+    if (label == 'Wash & Dry') {
+      gradient = LinearGradient(colors: [Colors.white, Colors.green]);
+    } else if (label == 'Wash Only') {
+      gradient = LinearGradient(colors: [Colors.white, Colors.blue]);
+    } else if (label == 'Dry Only') {
+      gradient = LinearGradient(colors: [Colors.white, Colors.orange]);
+    }
+
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton.icon(
-          onPressed: () {
+        child: InkWell(
+          onTap: () {
             setState(() {
               selectedService = label;
             });
           },
-          icon: Icon(icon, color: isSelected ? Colors.white : Colors.black),
-          label: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
-              fontWeight: FontWeight.bold,
+          child: Container(
+            height: 70,
+            decoration: BoxDecoration(
+              gradient: isSelected ? gradient : null,
+              color: isSelected ? null : Colors.grey[300],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey),
             ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected ? Colors.purple : Colors.grey[300],
-            foregroundColor: isSelected ? Colors.white : Colors.black,
-            minimumSize: Size(90, 70),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: isSelected ? Colors.white : Colors.black),
+                SizedBox(width: 6),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -87,8 +106,17 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Laundry Hub'),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text(
+          'Laundry Hub',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: SafeArea(
         child: Padding(

@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'customerAccountSettingsPage.dart';
 import 'customerNotificationsPage.dart'; // <-- you'll create this
-import '../screens/customerLoginPage.dart';
+import '../customerLoginPage.dart';
 
 class CustomerProfilePage extends StatelessWidget {
   @override
@@ -16,11 +16,27 @@ class CustomerProfilePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(
+          color: Colors.white,
+        ), // sets back arrow color to white
+        title: Text(
+          'Profile',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
+
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('customers').doc(uid).snapshots(),
+        stream:
+            FirebaseFirestore.instance
+                .collection('customers')
+                .doc(uid)
+                .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -36,7 +52,9 @@ class CustomerProfilePage extends StatelessWidget {
             return Center(child: Text('No user data found.'));
           }
 
-          final displayName = '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'.trim();
+          final displayName =
+              '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
+                  .trim();
           final phoneNumber = userData['phoneNumber'] ?? 'No Phone';
           final address = userData['address'] ?? 'No Address';
 
@@ -53,7 +71,10 @@ class CustomerProfilePage extends StatelessWidget {
                     backgroundColor: Colors.deepPurple,
                     child: Icon(Icons.person, color: Colors.white),
                   ),
-                  title: Text(displayName, style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    displayName,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -66,14 +87,22 @@ class CustomerProfilePage extends StatelessWidget {
               ),
               SizedBox(height: 24),
 
-              Text("General", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                "General",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 8),
 
               ListTile(
                 leading: Icon(Icons.settings),
                 title: Text("Account Settings"),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => CustomerAccountSettingsPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CustomerAccountSettingsPage(),
+                    ),
+                  );
                 },
               ),
               Divider(),
@@ -82,7 +111,12 @@ class CustomerProfilePage extends StatelessWidget {
                 leading: Icon(Icons.notifications),
                 title: Text("Notifications & Reminders"),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => CustomerNotificationsPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CustomerNotificationsPage(),
+                    ),
+                  );
                 },
               ),
               Divider(),
@@ -91,7 +125,10 @@ class CustomerProfilePage extends StatelessWidget {
 
               ListTile(
                 leading: Icon(Icons.logout),
-                title: Text("Log Out", style: TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(
+                  "Log Out",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 onTap: () {
                   _showLogoutConfirmation(context);
                 },
@@ -106,28 +143,29 @@ class CustomerProfilePage extends StatelessWidget {
   void _showLogoutConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Log Out'),
-        content: Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+      builder:
+          (_) => AlertDialog(
+            title: Text('Log Out'),
+            content: Text('Are you sure you want to log out?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => CustomerLoginPage()),
+                    (route) => false,
+                  );
+                },
+                child: Text('Log Out', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => CustomerLoginPage()),
-                (route) => false,
-              );
-            },
-            child: Text('Log Out', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 }
