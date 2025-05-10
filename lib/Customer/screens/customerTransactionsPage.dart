@@ -17,7 +17,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF4B007D),
         iconTheme: IconThemeData(
           color: Colors.white,
         ), // sets back arrow color to white

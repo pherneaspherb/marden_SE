@@ -14,11 +14,19 @@ class _WaterStationPageState extends State<WaterStationPage> {
   double _getContainerPrice(String container) {
     switch (container) {
       case 'Jug':
-        return 45.0;
+        return 25.0;
       case 'Tube':
       default:
-        return 30.0;
+        return 25.0;
     }
+  }
+
+  double get totalPrice {
+    double baseTotal = _getContainerPrice(_selectedContainer) * _quantity;
+    if (_deliveryMode == 'Deliver') {
+      baseTotal += 15.0; // Delivery fee
+    }
+    return baseTotal;
   }
 
   bool get isOrderFormValid =>
@@ -27,18 +35,14 @@ class _WaterStationPageState extends State<WaterStationPage> {
       _deliveryMode.isNotEmpty;
 
   void _proceedToPayment() {
-    double unitPrice = _getContainerPrice(_selectedContainer);
-    double totalPrice = unitPrice * _quantity;
-
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => WaterPaymentPage(
-              selectedContainer: '$_quantity x $_selectedContainer',
-              totalPrice: totalPrice,
-              deliveryMode: _deliveryMode,
-            ),
+        builder: (context) => WaterPaymentPage(
+          selectedContainer: _selectedContainer,
+          quantity: _quantity,
+          deliveryMode: _deliveryMode,
+        ),
       ),
     );
   }
@@ -47,13 +51,13 @@ class _WaterStationPageState extends State<WaterStationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF4B007D),
         iconTheme: IconThemeData(color: Colors.white),
         title: Text(
           'Water Station',
           style: TextStyle(
-            fontFamily: 'Poppins', // Replace with the actual font family name
-            fontWeight: FontWeight.w600, // You can use w400, w500, w700, etc.
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
             fontSize: 20,
             color: Colors.white,
           ),
@@ -122,13 +126,34 @@ class _WaterStationPageState extends State<WaterStationPage> {
                 onChanged: (value) => setState(() => _deliveryMode = value!),
               ),
               SizedBox(height: 24),
+              Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'TOTAL',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    'PHP ${totalPrice.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
               ElevatedButton(
                 onPressed: isOrderFormValid ? _proceedToPayment : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Color(0xFF4B007D),
                   padding: EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
                 child: Text(
@@ -149,26 +174,37 @@ class _WaterStationPageState extends State<WaterStationPage> {
 
   Widget _buildContainerButton(String label) {
     final bool isSelected = _selectedContainer == label;
-    return ElevatedButton(
-      onPressed: () => setState(() => _selectedContainer = label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            isSelected ? Colors.deepPurple : Colors.deepPurple[100],
-        foregroundColor: Colors.white,
-        minimumSize: Size(130, 100),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            label == 'Tube' ? Icons.water_drop : Icons.local_drink,
-            size: 30,
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: () => setState(() => _selectedContainer = label),
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                isSelected ? Color(0xFF4B007D) : Colors.deepPurple[100],
+            foregroundColor: Colors.white,
+            minimumSize: Size(130, 100),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          SizedBox(height: 8),
-          Text('$label Container'),
-        ],
-      ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                label == 'Tube' ? Icons.water_drop : Icons.local_drink,
+                size: 30,
+              ),
+              SizedBox(height: 8),
+              Text('$label Container'),
+            ],
+          ),
+        ),
+        SizedBox(height: 6),
+        Text(
+          'PHP ${_getContainerPrice(label).toStringAsFixed(2)}',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }

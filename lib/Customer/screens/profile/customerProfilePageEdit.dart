@@ -61,7 +61,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF4B007D),
         iconTheme: IconThemeData(
           color: Colors.white,
         ), // sets back arrow color to white
@@ -112,7 +112,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       onPressed: _saveChanges,
                       child: Text('Save Changes'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: Color(0xFF4B007D),
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(vertical: 16),
                         textStyle: TextStyle(fontSize: 16),

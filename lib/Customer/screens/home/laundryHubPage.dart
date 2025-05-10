@@ -12,16 +12,58 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
   bool foldClothes = false;
   double weight = 0.0;
   String deliveryMode = '';
+  double totalAmount = 0.0;
 
   void _incrementWeight() {
-    setState(() {
-      weight += 1;
-    });
+    if (weight < 7) {
+      setState(() {
+        weight += 1;
+        _calculateTotal();
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Maximum allowed weight is 7 kg."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _decrementWeight() {
     setState(() {
-      if (weight > 0) weight -= 1;
+      if (weight > 0) {
+        weight -= 1;
+        _calculateTotal();
+      }
+    });
+  }
+
+  void _calculateTotal() {
+    double baseRate = 0.0;
+
+    switch (selectedService) {
+      case 'Wash & Dry':
+        baseRate = 150.0;
+        break;
+      case 'Wash Only':
+        baseRate = 90.0;
+        break;
+      case 'Dry Only':
+        baseRate = 60.0;
+        break;
+    }
+
+    double extras = 0.0;
+    if (addSoftener) extras += 50.0;
+    if (foldClothes) extras += 25.0;
+
+    double weightCharge = weight * 10.0;
+
+    double deliveryFee = (deliveryMode == 'Deliver') ? 15.0 : 0.0;
+
+    setState(() {
+      totalAmount = baseRate + weightCharge + extras + deliveryFee;
     });
   }
 
@@ -30,11 +72,11 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
 
     Gradient? gradient;
     if (label == 'Wash & Dry') {
-      gradient = LinearGradient(colors: [Colors.white, Colors.green]);
+      gradient = LinearGradient(colors: [Colors.teal, Colors.green]);
     } else if (label == 'Wash Only') {
-      gradient = LinearGradient(colors: [Colors.white, Colors.blue]);
+      gradient = LinearGradient(colors: [Colors.lightBlue, Colors.blue]);
     } else if (label == 'Dry Only') {
-      gradient = LinearGradient(colors: [Colors.white, Colors.orange]);
+      gradient = LinearGradient(colors: [Colors.orange, Colors.deepOrange]);
     }
 
     return Expanded(
@@ -44,6 +86,7 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
           onTap: () {
             setState(() {
               selectedService = label;
+              _calculateTotal();
             });
           },
           child: Container(
@@ -89,15 +132,16 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LaundryPaymentPage(
-          serviceType: selectedService,
-          extras: [
-            if (addSoftener) 'Fabric Softener',
-            if (foldClothes) 'Fold',
-          ],
-          weight: weight,
-          deliveryMode: deliveryMode,
-        ),
+        builder:
+            (context) => LaundryPaymentPage(
+              serviceType: selectedService,
+              extras: [
+                if (addSoftener) 'Fabric Softener',
+                if (foldClothes) 'Fold',
+              ],
+              weight: weight,
+              deliveryMode: deliveryMode,
+            ),
       ),
     );
   }
@@ -106,7 +150,7 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF4B007D),
         iconTheme: IconThemeData(color: Colors.white),
         title: Text(
           'Laundry Hub',
@@ -130,7 +174,10 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
               SizedBox(height: 10),
               Row(
                 children: [
-                  _buildServiceButton('Wash & Dry', Icons.local_laundry_service),
+                  _buildServiceButton(
+                    'Wash & Dry',
+                    Icons.local_laundry_service,
+                  ),
                   _buildServiceButton('Wash Only', Icons.local_drink),
                   _buildServiceButton('Dry Only', Icons.wb_sunny),
                 ],
@@ -143,25 +190,49 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
               CheckboxListTile(
                 title: Text('Fabric Softener'),
                 value: addSoftener,
-                onChanged: (value) => setState(() => addSoftener = value!),
+                onChanged:
+                    (value) => setState(() {
+                      addSoftener = value!;
+                      _calculateTotal();
+                    }),
+                controlAffinity: ListTileControlAffinity.trailing,
               ),
               CheckboxListTile(
                 title: Text('Fold'),
                 value: foldClothes,
-                onChanged: (value) => setState(() => foldClothes = value!),
+                onChanged:
+                    (value) => setState(() {
+                      foldClothes = value!;
+                      _calculateTotal();
+                    }),
+                controlAffinity: ListTileControlAffinity.trailing,
               ),
               SizedBox(height: 20),
               Text(
-                'Weight (kg)',
+                'Weight',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+              Text(
+                'Prices may vary depending on laundry weight (max. 7 kg)',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              SizedBox(height: 10),
               Row(
                 children: [
+                  Expanded(
+                    child: TextFormField(
+                      enabled: false,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: weight.toStringAsFixed(1),
+                      ),
+                    ),
+                  ),
                   IconButton(
                     onPressed: _decrementWeight,
                     icon: Icon(Icons.remove_circle),
                   ),
-                  Text(weight.toStringAsFixed(1), style: TextStyle(fontSize: 18)),
                   IconButton(
                     onPressed: _incrementWeight,
                     icon: Icon(Icons.add_circle),
@@ -177,28 +248,51 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
                 title: Text('Pick Up'),
                 value: 'Pick Up',
                 groupValue: deliveryMode,
-                onChanged: (value) =>
-                    setState(() => deliveryMode = value.toString()),
+                onChanged:
+                    (value) => setState(() {
+                      deliveryMode = value.toString();
+                      _calculateTotal();
+                    }),
               ),
               RadioListTile(
                 title: Text('Deliver'),
                 value: 'Deliver',
                 groupValue: deliveryMode,
-                onChanged: (value) =>
-                    setState(() => deliveryMode = value.toString()),
+                onChanged:
+                    (value) => setState(() {
+                      deliveryMode = value.toString();
+                      _calculateTotal();
+                    }),
               ),
               SizedBox(height: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'TOTAL',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '₱ ${totalAmount.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
               ElevatedButton(
                 onPressed: _goToPayment,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Color(0xFF4B007D),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: Text('Proceed to Payment', style: TextStyle(fontSize: 16)),
+                child: Text(
+                  'Proceed to Payment',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ],
           ),

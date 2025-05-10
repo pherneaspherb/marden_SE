@@ -41,7 +41,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF4B007D),
         iconTheme: IconThemeData(
           color: Colors.white,
         ), // sets back arrow color to white
@@ -93,7 +93,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       onPressed: _changePassword,
                       child: Text('Update Password'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: Color(0xFF4B007D),
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(vertical: 16),
                         textStyle: TextStyle(fontSize: 16),

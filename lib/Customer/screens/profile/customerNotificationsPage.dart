@@ -13,7 +13,7 @@ class _CustomerNotificationsPageState extends State<CustomerNotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF4B007D),
         iconTheme: IconThemeData(
           color: Colors.white,
         ), // sets back arrow color to white
@@ -32,7 +32,7 @@ class _CustomerNotificationsPageState extends State<CustomerNotificationsPage> {
           SwitchListTile(
             title: Text('Remind me to pick up order'),
             value: _remindToPickup,
-            activeColor: Colors.deepPurple,
+            activeColor: Color(0xFF4B007D),
             onChanged: (value) {
               setState(() {
                 _remindToPickup = value;
@@ -43,7 +43,7 @@ class _CustomerNotificationsPageState extends State<CustomerNotificationsPage> {
           SwitchListTile(
             title: Text('Notify me when order is done'),
             value: _notifyWhenDone,
-            activeColor: Colors.deepPurple,
+            activeColor: Color(0xFF4B007D),
             onChanged: (value) {
               setState(() {
                 _notifyWhenDone = value;

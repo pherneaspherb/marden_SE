@@ -10,6 +10,7 @@ class LaundryPaymentPage extends StatefulWidget {
   final String deliveryMode;
 
   const LaundryPaymentPage({
+    super.key,
     required this.serviceType,
     required this.extras,
     required this.weight,
@@ -17,7 +18,7 @@ class LaundryPaymentPage extends StatefulWidget {
   });
 
   @override
-  _LaundryPaymentPageState createState() => _LaundryPaymentPageState();
+  State<LaundryPaymentPage> createState() => _LaundryPaymentPageState();
 }
 
 class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
@@ -35,19 +36,34 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
   void initState() {
     super.initState();
     _calculateTotal();
-    _loadDefaultAddress(); // Load default address during initialization
+    _loadDefaultAddress();
   }
 
   void _calculateTotal() {
-    const baseRate = 50.0;
-    const softenerFee = 10.0;
-    const foldFee = 15.0;
+    double baseRate = 0.0;
 
-    double total = widget.weight * baseRate;
-    if (widget.extras.contains('Fabric Softener')) total += softenerFee;
-    if (widget.extras.contains('Fold')) total += foldFee;
+    switch (widget.serviceType) {
+      case 'Wash & Dry':
+        baseRate = 150.0;
+        break;
+      case 'Wash Only':
+        baseRate = 90.0;
+        break;
+      case 'Dry Only':
+        baseRate = 60.0;
+        break;
+    }
 
-    setState(() => totalAmount = total);
+    double extras = 0.0;
+    if (widget.extras.contains('Fabric Softener')) extras += 50.0;
+    if (widget.extras.contains('Fold')) extras += 25.0;
+
+    double weightCharge = widget.weight * 10.0;
+    double deliveryFee = (widget.deliveryMode == 'Deliver') ? 15.0 : 0.0;
+
+    setState(() {
+      totalAmount = baseRate + weightCharge + extras + deliveryFee;
+    });
   }
 
   Future<void> _loadDefaultAddress() async {
@@ -55,47 +71,41 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
     if (uid == null) return;
 
     try {
-      final customerDoc = await FirebaseFirestore.instance.collection('customers').doc(uid).get();
-      final defaultAddress = customerDoc.data()?['defaultAddress'];
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('customers')
+              .doc(uid)
+              .get();
+      final address = doc.data()?['defaultAddress'];
 
-      if (defaultAddress != null) {
-        streetController.text = defaultAddress['street'] ?? '';
-        barangayController.text = defaultAddress['barangay'] ?? '';
-        municipalityController.text = defaultAddress['municipality'] ?? '';
-        cityController.text = defaultAddress['city'] ?? '';
-        setState(() {
-          saveAsDefault = true;
-        });
+      if (address != null) {
+        streetController.text = address['street'] ?? '';
+        barangayController.text = address['barangay'] ?? '';
+        municipalityController.text = address['municipality'] ?? '';
+        cityController.text = address['city'] ?? '';
+        setState(() => saveAsDefault = true);
       }
     } catch (e) {
-      print("Failed to load default address: $e");
+      debugPrint("Error loading address: $e");
     }
   }
 
   Future<void> _placeOrder() async {
-    final street = streetController.text.trim();
-    final barangay = barangayController.text.trim();
-    final municipality = municipalityController.text.trim();
-    final city = cityController.text.trim();
+    final addressFields = [
+      streetController.text.trim(),
+      barangayController.text.trim(),
+      municipalityController.text.trim(),
+      cityController.text.trim(),
+    ];
 
-    if (street.isEmpty || barangay.isEmpty || municipality.isEmpty || city.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill out all required address fields.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+    if (addressFields.any((e) => e.isEmpty)) {
+      _showSnackbar('Please fill out all required address fields.', true);
       return;
     }
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('User not logged in.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _showSnackbar('User not logged in.', true);
       return;
     }
 
@@ -104,10 +114,10 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
       'extras': widget.extras,
       'weight': widget.weight,
       'deliveryMode': widget.deliveryMode,
-      'address': street,
-      'barangay': barangay,
-      'municipality': municipality,
-      'city': city,
+      'address': addressFields[0],
+      'barangay': addressFields[1],
+      'municipality': addressFields[2],
+      'city': addressFields[3],
       'paymentMethod': 'Cash',
       'instructions': instructionsController.text.trim(),
       'totalAmount': totalAmount,
@@ -115,84 +125,107 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
       'status': 'Pending',
     };
 
+    setState(() => isPlacingOrder = true);
+
     try {
-      setState(() => isPlacingOrder = true);
-
-      final customerRef = FirebaseFirestore.instance.collection('customers').doc(uid);
-
+      final customerRef = FirebaseFirestore.instance
+          .collection('customers')
+          .doc(uid);
       await customerRef.collection('laundryOrders').add(orderData);
 
       if (saveAsDefault) {
         await customerRef.set({
           'defaultAddress': {
-            'street': street,
-            'barangay': barangay,
-            'municipality': municipality,
-            'city': city,
-          }
+            'street': addressFields[0],
+            'barangay': addressFields[1],
+            'municipality': addressFields[2],
+            'city': addressFields[3],
+          },
         }, SetOptions(merge: true));
       }
 
       _showSuccessDialog();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to place order: $e')),
-      );
+      _showSnackbar('Failed to place order: $e', true);
     } finally {
       setState(() => isPlacingOrder = false);
     }
+  }
+
+  void _showSnackbar(String message, bool isError) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+      ),
+    );
   }
 
   void _showSuccessDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.deepPurple,
-                child: Icon(Icons.check, color: Colors.white, size: 30),
+      builder:
+          (_) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Color(0xFF4B007D),
+                    child: Icon(Icons.check, color: Colors.white, size: 30),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Your order has been processed.',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Please track your order.',
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => CustomerMainPage()),
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF4B007D),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text("Done", style: TextStyle(fontSize: 16)),
+                  ),
+                ],
               ),
-              SizedBox(height: 20),
-              Text('Your order has been processed.',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center),
-              SizedBox(height: 10),
-              Text('Please track your order.',
-                  style: TextStyle(fontSize: 14, color: Colors.black54),
-                  textAlign: TextAlign.center),
-              SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => CustomerMainPage()),
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                ),
-                child: Text("Done", style: TextStyle(fontSize: 16)),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String label}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
@@ -209,65 +242,107 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text('Laundry Hub',
-            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 20, color: Colors.white)),
+        backgroundColor: Color(0xFF4B007D),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          'Laundry Hub',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: ListView(
           children: [
-            Text('Address', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            _buildTextField(controller: streetController, label: 'House No. / Street'),
+            const Text(
+              'Address',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            _buildTextField(
+              controller: streetController,
+              label: 'House No. / Street',
+            ),
             _buildTextField(controller: barangayController, label: 'Barangay'),
-            _buildTextField(controller: municipalityController, label: 'Municipality'),
+            _buildTextField(
+              controller: municipalityController,
+              label: 'Municipality',
+            ),
             _buildTextField(controller: cityController, label: 'City'),
-
             CheckboxListTile(
-              title: Text('Save as default address'),
+              title: const Text('Save as default address'),
               value: saveAsDefault,
               onChanged: (val) => setState(() => saveAsDefault = val ?? false),
               controlAffinity: ListTileControlAffinity.leading,
             ),
-
-            SizedBox(height: 20),
-            Text('Payment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
+            const SizedBox(height: 20),
+            const Text(
+              'Payment',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.warning, color: Colors.orange, size: 20),
-                SizedBox(width: 8),
+                const Icon(Icons.warning, color: Colors.orange, size: 20),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Note: This business currently accepts Cash on Delivery (COD) only.',
-                    style: TextStyle(color: Colors.orange[800], fontSize: 14, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      color: Colors.orange[800],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
             ),
-
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
+            const Text(
+              'Additional Instructions (Optional)',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 5),
+            _buildTextField(
+              controller: instructionsController,
+              label: 'e.g. Leave at front door',
+            ),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('₱ ${totalAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'TOTAL',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '₱ ${totalAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
-
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             ElevatedButton(
               onPressed: isPlacingOrder ? null : _placeOrder,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
+                backgroundColor: Color(0xFF4B007D),
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 15),
               ),
-              child: isPlacingOrder
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text('Place an Order', style: TextStyle(fontSize: 16)),
+              child:
+                  isPlacingOrder
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                        'Place an Order',
+                        style: TextStyle(fontSize: 16),
+                      ),
             ),
           ],
         ),

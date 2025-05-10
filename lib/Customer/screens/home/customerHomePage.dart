@@ -47,57 +47,95 @@ class _CustomerHomePageState extends State<CustomerHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // Left-align
-                  children: [
-                    Text(
-                      'Welcome, ${fullName ?? "User"} 👋',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.deepPurple,
-                        fontFamily: 'Poppins',
-                        letterSpacing: 0.5,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Top Welcome Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF4B007D),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Welcome to Marden Hub!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Your one-stop solution for all your daily needs, whether it’s fresh laundry or clean water delivered to your door.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'What would you like to do today?',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF4B007D),
                       ),
                     ),
-                    const SizedBox(height: 80),
-
-                    // Laundry Hub Button
-                    _buildGradientButton(
-                      icon: Icons.local_laundry_service,
-                      label: 'Laundry Hub',
-                      gradientColors: [Colors.deepPurple, Colors.purpleAccent],
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => LaundryHubPage()),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Water Station Button
-                    _buildGradientButton(
-                      icon: Icons.opacity,
-                      label: 'Water Station',
-                      gradientColors: [Colors.lightBlueAccent, Colors.blue],
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => WaterStationPage()),
-                        );
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-      ),
+                const SizedBox(height: 30),
+
+                // Action Buttons
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      _buildGradientButton(
+                        icon: Icons.local_laundry_service,
+                        label: 'Laundry Hub',
+                        gradientColors: [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => LaundryHubPage()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 30),
+                      _buildGradientButton(
+                        icon: Icons.opacity,
+                        label: 'Water Station',
+                        gradientColors: [Color(0xFF29B6F6), Color(0xFF0288D1)],
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => WaterStationPage()),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -109,39 +147,37 @@ class _CustomerHomePageState extends State<CustomerHomePage> {
   }) {
     return Container(
       width: double.infinity,
-      height: 60,
+      height: 100,
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: gradientColors),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: gradientColors.last.withOpacity(0.4),
-            offset: Offset(0, 6),
-            blurRadius: 10,
+            offset: const Offset(0, 8),
+            blurRadius: 16,
           )
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Icon(icon, color: Colors.white),
-                const SizedBox(width: 12),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 36),
+              const SizedBox(width: 16),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
                 ),
-              ],
-            ),
+              )
+            ],
           ),
         ),
       ),

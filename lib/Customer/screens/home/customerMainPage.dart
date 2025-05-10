@@ -97,7 +97,7 @@ class _CustomerMainPageState extends State<CustomerMainPage> {
         onTap: _onItemTapped,
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white70,
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF4B007D),
         type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),

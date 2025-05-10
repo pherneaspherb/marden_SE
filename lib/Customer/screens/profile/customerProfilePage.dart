@@ -16,7 +16,7 @@ class CustomerProfilePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF4B007D),
         iconTheme: IconThemeData(
           color: Colors.white,
         ), // sets back arrow color to white
@@ -68,7 +68,7 @@ class CustomerProfilePage extends StatelessWidget {
                 ),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Colors.deepPurple,
+                    backgroundColor: Color(0xFF4B007D),
                     child: Icon(Icons.person, color: Colors.white),
                   ),
                   title: Text(
