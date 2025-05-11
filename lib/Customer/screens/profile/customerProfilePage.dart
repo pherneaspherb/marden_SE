@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'customerAccountSettingsPage.dart';
 import 'customerNotificationsPage.dart'; // <-- you'll create this
 import '../customerLoginPage.dart';
+import 'customerAddressBookPage.dart';
 
 class CustomerProfilePage extends StatelessWidget {
   @override
@@ -115,6 +116,23 @@ class CustomerProfilePage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => CustomerNotificationsPage(),
+                    ),
+                  );
+                },
+              ),
+              Divider(),
+
+              ListTile(
+                leading: Icon(
+                  Icons.location_on_outlined,
+                  color: Colors.black54,
+                ),
+                title: Text('Address Book'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CustomerAddressBookPage(),
                     ),
                   );
                 },
