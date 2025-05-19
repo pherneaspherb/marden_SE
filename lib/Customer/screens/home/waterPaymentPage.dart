@@ -50,35 +50,64 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final orderData = {
-      'type': 'Water',
-      'containerType': widget.selectedContainer,
-      'quantity': widget.quantity,
-      'totalPrice': _computedTotalPrice,
-      'deliveryMode': widget.deliveryMode,
-      'address': {
-        'house': streetController.text.trim(),
-        'barangay': barangayController.text.trim(),
-        'municipality': municipalityController.text.trim(),
-        'city': cityController.text.trim(),
-      },
-      'paymentMethod': 'Cash',
-      'instructions': _instructionsController.text.trim(),
-      'status': 'Pending',
-      'createdAt': FieldValue.serverTimestamp(),
-    };
-
     setState(() => _isPlacingOrder = true);
 
     try {
-      final docRef = FirebaseFirestore.instance
+      final customerRef = FirebaseFirestore.instance
           .collection('customers')
           .doc(user.uid);
+      final ordersRef = customerRef.collection('waterOrders');
 
-      await docRef.collection('waterOrders').add(orderData);
+      final countersRef = FirebaseFirestore.instance
+          .collection('counters')
+          .doc('waterOrders');
+
+      // Transaction to get and increment the last order number
+      int newOrderNumber = await FirebaseFirestore.instance.runTransaction((
+        transaction,
+      ) async {
+        final snapshot = await transaction.get(countersRef);
+
+        int current = 0;
+        if (snapshot.exists) {
+          current = snapshot.get('lastOrderNumber') ?? 0;
+        }
+
+        int updated = current + 1;
+        transaction.set(countersRef, {
+          'lastOrderNumber': updated,
+        }, SetOptions(merge: true));
+
+        return updated;
+      });
+
+      final currentYear = DateTime.now().year;
+      final formattedOrderId =
+          'ORD-$currentYear-${newOrderNumber.toString().padLeft(4, '0')}';
+
+      final orderData = {
+        'orderId': formattedOrderId,
+        'type': 'Water',
+        'containerType': widget.selectedContainer,
+        'quantity': widget.quantity,
+        'totalPrice': _computedTotalPrice,
+        'deliveryMode': widget.deliveryMode,
+        'address': {
+          'house': streetController.text.trim(),
+          'barangay': barangayController.text.trim(),
+          'municipality': municipalityController.text.trim(),
+          'city': cityController.text.trim(),
+        },
+        'paymentMethod': 'Cash',
+        'instructions': _instructionsController.text.trim(),
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      await ordersRef.add(orderData);
 
       if (saveAsDefault) {
-        await docRef.update({
+        await customerRef.update({
           'defaultAddress': {
             'street': streetController.text.trim(),
             'barangay': barangayController.text.trim(),
@@ -105,7 +134,10 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
 
     try {
       final doc =
-          await FirebaseFirestore.instance.collection('customers').doc(uid).get();
+          await FirebaseFirestore.instance
+              .collection('customers')
+              .doc(uid)
+              .get();
       final address = doc.data()?['defaultAddress'];
 
       if (address != null) {
@@ -138,57 +170,60 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircleAvatar(
-                radius: 30,
-                backgroundColor: Color(0xFF4B007D),
-                child: Icon(Icons.check, color: Colors.white, size: 30),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Your order has been processed.',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Please track your order.',
-                style: TextStyle(fontSize: 14, color: Colors.black54),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => CustomerMainPage()),
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF4B007D),
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+      builder:
+          (_) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Color(0xFF4B007D),
+                    child: Icon(Icons.check, color: Colors.white, size: 30),
                   ),
-                ),
-                child: const Text("Done", style: TextStyle(fontSize: 16)),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Your order has been processed.',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Please track your order.',
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => CustomerMainPage()),
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF4B007D),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text("Done", style: TextStyle(fontSize: 16)),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -244,40 +279,44 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
                 _buildTextField(
                   controller: streetController,
                   label: 'House No. / Street',
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty
-                          ? 'Please enter house/street'
-                          : null,
+                  validator:
+                      (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Please enter house/street'
+                              : null,
                 ),
                 _buildTextField(
                   controller: barangayController,
                   label: 'Barangay',
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty
-                          ? 'Please enter barangay'
-                          : null,
+                  validator:
+                      (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Please enter barangay'
+                              : null,
                 ),
                 _buildTextField(
                   controller: municipalityController,
                   label: 'Municipality',
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty
-                          ? 'Please enter municipality'
-                          : null,
+                  validator:
+                      (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Please enter municipality'
+                              : null,
                 ),
                 _buildTextField(
                   controller: cityController,
                   label: 'City',
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty
-                          ? 'Please enter city'
-                          : null,
+                  validator:
+                      (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Please enter city'
+                              : null,
                 ),
                 CheckboxListTile(
                   title: const Text('Save as default address'),
                   value: saveAsDefault,
-                  onChanged: (val) =>
-                      setState(() => saveAsDefault = val ?? false),
+                  onChanged:
+                      (val) => setState(() => saveAsDefault = val ?? false),
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
                 const SizedBox(height: 20),
@@ -337,12 +376,13 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     minimumSize: const Size.fromHeight(50),
                   ),
-                  child: _isPlacingOrder
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Place an Order',
-                          style: TextStyle(fontSize: 16),
-                        ),
+                  child:
+                      _isPlacingOrder
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                            'Place an Order',
+                            style: TextStyle(fontSize: 16),
+                          ),
                 ),
               ],
             ),

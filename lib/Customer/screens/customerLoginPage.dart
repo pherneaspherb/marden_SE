@@ -14,73 +14,78 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
 
   void _login() async {
-  if (_isLoading) return;
+    if (_isLoading) return;
 
-  if (_formKey.currentState!.validate()) {
-    setState(() => _isLoading = true);
-    print("🔓 Attempting login...");
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+      print("🔓 Attempting login...");
 
-    try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
+      try {
+        final email = _emailController.text.trim();
+        final password = _passwordController.text;
 
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: email, password: password);
 
-      final user = userCredential.user;
-      print("✅ Login successful: ${user?.uid}");
+        final user = userCredential.user;
+        print("✅ Login successful: ${user?.uid}");
 
-      if (user != null) {
-        // 🔍 Check if user exists in Firestore under `customers`
-        final doc = await FirebaseFirestore.instance
-            .collection('customers')
-            .doc(user.uid)
-            .get();
+        if (user != null) {
+          // 🔍 Check if user exists in Firestore under `customers`
+          final doc =
+              await FirebaseFirestore.instance
+                  .collection('customers')
+                  .doc(user.uid)
+                  .get();
 
-        if (doc.exists) {
-          // ✅ User data found — proceed to main page
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Login successful')),
-          );
+          if (doc.exists) {
+            // ✅ User data found — proceed to main page
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Login successful')));
 
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => CustomerMainPage()),
-            (route) => false,
-          );
-        } else {
-          // ❌ No user data found in Firestore
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('User data not found. Please try logging in again.')),
-          );
-          await FirebaseAuth.instance.signOut();
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => CustomerMainPage()),
+              (route) => false,
+            );
+          } else {
+            // ❌ No user data found in Firestore
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'User data not found. Please try logging in again.',
+                ),
+              ),
+            );
+            await FirebaseAuth.instance.signOut();
+          }
         }
-      }
-    } catch (e) {
-      print("❌ Login error: $e");
-      String errorMessage = 'Login failed';
+      } catch (e) {
+        print("❌ Login error: $e");
+        String errorMessage = 'Login failed';
 
-      if (e is FirebaseAuthException) {
-        if (e.code == 'user-not-found') {
-          errorMessage = 'No user found for that email';
-        } else if (e.code == 'wrong-password') {
-          errorMessage = 'Wrong password';
-        } else {
-          errorMessage = e.message ?? 'Authentication error';
+        if (e is FirebaseAuthException) {
+          if (e.code == 'user-not-found') {
+            errorMessage = 'No user found for that email';
+          } else if (e.code == 'wrong-password') {
+            errorMessage = 'Wrong password';
+          } else {
+            errorMessage = e.message ?? 'Authentication error';
+          }
         }
-      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
-    } finally {
-      setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      } finally {
+        setState(() => _isLoading = false);
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -117,22 +122,33 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                 child: Column(
                   children: [
                     _buildTextField(_emailController, 'Email'),
-                    _buildTextField(_passwordController, 'Password', isPassword: true),
+                    _buildTextField(
+                      _passwordController,
+                      'Password',
+                      isPassword: true,
+                    ),
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 15,
+                        ),
                       ),
-                      child: _isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            )
-                          : Text('Login'),
+                      child:
+                          _isLoading
+                              ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text('Login'),
                     ),
                   ],
                 ),
@@ -150,14 +166,30 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
     bool isPassword = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0), 
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        keyboardType: label == 'Email' ? TextInputType.emailAddress : TextInputType.text,
-        obscureText: isPassword,
+        keyboardType:
+            label == 'Email' ? TextInputType.emailAddress : TextInputType.text,
+        obscureText: isPassword ? !_isPasswordVisible : false,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(),
+          suffixIcon:
+              isPassword
+                  ? IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  )
+                  : null,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) return 'Please enter $label';

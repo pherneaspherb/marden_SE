@@ -109,29 +109,53 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
       return;
     }
 
-    final orderData = {
-      'serviceType': widget.serviceType,
-      'extras': widget.extras,
-      'weight': widget.weight,
-      'deliveryMode': widget.deliveryMode,
-      'address': addressFields[0],
-      'barangay': addressFields[1],
-      'municipality': addressFields[2],
-      'city': addressFields[3],
-      'paymentMethod': 'Cash',
-      'instructions': instructionsController.text.trim(),
-      'totalAmount': totalAmount,
-      'createdAt': FieldValue.serverTimestamp(),
-      'status': 'Pending',
-    };
-
     setState(() => isPlacingOrder = true);
 
     try {
+      final counterRef = FirebaseFirestore.instance
+          .collection('counters')
+          .doc('laundryOrders');
+
+      // Run transaction to safely increment order counter and get next number
+      final newOrderId = await FirebaseFirestore.instance.runTransaction((
+        tx,
+      ) async {
+        final counterSnap = await tx.get(counterRef);
+        int lastNumber = counterSnap.data()?['lastOrderNumber'] ?? 0;
+        int nextOrderNumber = lastNumber + 1;
+
+        // Update the counter
+        tx.update(counterRef, {'lastOrderNumber': nextOrderNumber});
+
+        // Format: ORD-2025-0001
+        final year = DateTime.now().year;
+        return 'ORD-$year-${nextOrderNumber.toString().padLeft(4, '0')}';
+      });
+
+      final orderData = {
+        'orderId': newOrderId,
+        'serviceType': widget.serviceType,
+        'extras': widget.extras,
+        'weight': widget.weight,
+        'deliveryMode': widget.deliveryMode,
+        'address': {
+          'house': streetController.text.trim(),
+          'barangay': barangayController.text.trim(),
+          'municipality': municipalityController.text.trim(),
+          'city': cityController.text.trim(),
+        },
+        'paymentMethod': 'Cash',
+        'instructions': instructionsController.text.trim(),
+        'totalAmount': totalAmount,
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+      };
+
       final customerRef = FirebaseFirestore.instance
           .collection('customers')
           .doc(uid);
-      await customerRef.collection('laundryOrders').add(orderData);
+      final orderRef = customerRef.collection('laundryOrders').doc(newOrderId);
+      await orderRef.set(orderData);
 
       if (saveAsDefault) {
         await customerRef.set({
@@ -242,7 +266,7 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF4B007D),
+        backgroundColor: const Color(0xFF4B007D),
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Laundry Hub',
@@ -332,7 +356,7 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
             ElevatedButton(
               onPressed: isPlacingOrder ? null : _placeOrder,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF4B007D),
+                backgroundColor: const Color(0xFF4B007D),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 15),
               ),

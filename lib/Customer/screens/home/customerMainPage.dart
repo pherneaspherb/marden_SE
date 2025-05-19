@@ -66,7 +66,7 @@ class _CustomerMainPageState extends State<CustomerMainPage> {
 
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      _selectedIndex = index; 
     });
   }
 

@@ -20,6 +20,8 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
   final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   void _signUp() async {
     if (_isLoading) return;
@@ -32,7 +34,9 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
         final email = _emailController.text.trim();
         print("📨 Email: $email");
 
-        final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+        final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(
+          email,
+        );
         print("📩 Sign-in methods: $methods");
 
         if (methods.isNotEmpty) {
@@ -147,7 +151,11 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
                     _buildTextField(_firstNameController, 'First Name'),
                     _buildTextField(_lastNameController, 'Last Name'),
                     _buildTextField(_emailController, 'Email'),
-                    _buildTextField(_phoneNumberController, 'Phone Number', isNumber: true), // Added
+                    _buildTextField(
+                      _phoneNumberController,
+                      'Phone Number',
+                      isNumber: true,
+                    ), // Added
                     _buildTextField(_addressController, 'Address'), // Added
                     _buildTextField(
                       _passwordController,
@@ -170,16 +178,17 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
                           vertical: 15,
                         ),
                       ),
-                      child: _isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text('Sign Up'),
+                      child:
+                          _isLoading
+                              ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text('Sign Up'),
                     ),
                   ],
                 ),
@@ -197,19 +206,47 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
     bool isPassword = false,
     bool isNumber = false,
   }) {
+    bool isObscure =
+        isPassword &&
+        ((label == 'Password' && !_isPasswordVisible) ||
+            (label == 'Confirm Password' && !_isConfirmPasswordVisible));
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        keyboardType: isNumber
-            ? TextInputType.phone
-            : (label == 'Email'
-                ? TextInputType.emailAddress
-                : TextInputType.text),
-        obscureText: isPassword,
+        keyboardType:
+            isNumber
+                ? TextInputType.phone
+                : (label == 'Email'
+                    ? TextInputType.emailAddress
+                    : TextInputType.text),
+        obscureText: isObscure,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(),
+          suffixIcon:
+              isPassword
+                  ? IconButton(
+                    icon: Icon(
+                      (label == 'Password' && _isPasswordVisible) ||
+                              (label == 'Confirm Password' &&
+                                  _isConfirmPasswordVisible)
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        if (label == 'Password') {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        } else if (label == 'Confirm Password') {
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
+                        }
+                      });
+                    },
+                  )
+                  : null,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) return 'Please enter $label';
@@ -219,7 +256,8 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
           if (label == 'Password' && value.length < 6) {
             return 'Password must be at least 6 characters';
           }
-          if (label == 'Confirm Password' && value != _passwordController.text) {
+          if (label == 'Confirm Password' &&
+              value != _passwordController.text) {
             return 'Passwords do not match';
           }
           if (label == 'Phone Number' && value.length < 10) {

@@ -51,18 +51,22 @@ class CustomerOrdersPage extends StatelessWidget {
 
   Widget _buildLaundryOrders(BuildContext context, String uid) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('customers')
-          .doc(uid)
-          .collection('laundryOrders')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance
+              .collection('customers')
+              .doc(uid)
+              .collection('laundryOrders')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
-        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+        if (snapshot.hasError)
+          return Center(child: Text('Error: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting)
+          return Center(child: CircularProgressIndicator());
 
         final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) return Center(child: Text('No laundry orders found.'));
+        if (docs.isEmpty)
+          return Center(child: Text('No laundry orders found.'));
 
         return ListView.builder(
           padding: EdgeInsets.all(16),
@@ -70,19 +74,25 @@ class CustomerOrdersPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
             return InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => OrderDetailsPage(
-                    orderData: data,
-                    orderType: 'Laundry Hub',
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => OrderDetailsPage(
+                            orderData: data,
+                            orderType: 'Laundry Hub',
+                          ),
+                    ),
                   ),
-                ),
-              ),
               child: _buildOrderCard(
                 icon: Icons.local_laundry_service,
-                title: 'Your laundry is being processed.',
-                subtitle: 'To pay: ₱${data['totalAmount']} via ${data['paymentMethod']}',
+                title: _getStatusText(
+                  data['status'] ?? 'pending',
+                  'Laundry Hub',
+                ),
+                subtitle:
+                    'To pay: ₱${data['totalAmount']} via ${data['paymentMethod']}',
               ),
             );
           },
@@ -91,17 +101,31 @@ class CustomerOrdersPage extends StatelessWidget {
     );
   }
 
+  String _getStatusText(String status, String serviceType) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'Your $serviceType order is completed.';
+      case 'cancelled':
+        return 'Your $serviceType order was cancelled.';
+      default:
+        return 'Your $serviceType order is being processed.';
+    }
+  }
+
   Widget _buildWaterOrders(BuildContext context, String uid) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('customers')
-          .doc(uid)
-          .collection('waterOrders')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance
+              .collection('customers')
+              .doc(uid)
+              .collection('waterOrders')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
-        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+        if (snapshot.hasError)
+          return Center(child: Text('Error: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting)
+          return Center(child: CircularProgressIndicator());
 
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) return Center(child: Text('No water orders found.'));
@@ -112,19 +136,22 @@ class CustomerOrdersPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
             return InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => OrderDetailsPage(
-                    orderData: data,
-                    orderType: 'Water Station',
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => OrderDetailsPage(
+                            orderData: data,
+                            orderType: 'Water Station',
+                          ),
+                    ),
                   ),
-                ),
-              ),
               child: _buildOrderCard(
                 icon: Icons.local_drink,
-                title: 'Your water is being processed.',
-                subtitle: 'To pay: ₱${data['totalPrice']} via ${data['paymentMethod']}',
+                title: _getStatusTextData(data['status'] ?? 'pending', 'Water Station'),
+                subtitle:
+                    'To pay: ₱${data['totalPrice']} via ${data['paymentMethod']}',
               ),
             );
           },
@@ -132,6 +159,18 @@ class CustomerOrdersPage extends StatelessWidget {
       },
     );
   }
+
+  String _getStatusTextData(String status, String serviceType) {
+  switch (status.toLowerCase()) {
+    case 'completed':
+      return 'Your $serviceType order is completed.';
+    case 'cancelled':
+      return 'Your $serviceType order was cancelled.';
+    default:
+      return 'Your $serviceType order is being processed.';
+  }
+}
+
 
   Widget _buildOrderCard({
     required IconData icon,

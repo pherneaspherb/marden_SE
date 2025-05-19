@@ -21,33 +21,36 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: _primaryColor,
+        elevation: 0,
+        centerTitle: false,
+        title: const Text(
+          'Transactions',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Transactions',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: _primaryColor,
-                    ),
-                  ),
-                  const Icon(Icons.history, color: Colors.black),
-                ],
-              ),
-            ),
-            
+            const SizedBox(
+              height: 20,
+            ), // <- this adds space between AppBar and tab buttons
             // Tab Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(horizontal: 40.0),
+
               child: Row(
                 children: [
                   _buildTabButton(0, 'Laundry'),
@@ -56,7 +59,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -71,11 +74,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
               ),
             ),
             const SizedBox(height: 10),
-            
+
             Expanded(
-              child: user == null
-                  ? _buildNotLoggedIn()
-                  : _selectedTab == 0
+              child:
+                  user == null
+                      ? _buildNotLoggedIn()
+                      : _selectedTab == 0
                       ? _buildLaundryOrders(user)
                       : _buildWaterOrders(user),
             ),
@@ -90,10 +94,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
       child: ElevatedButton(
         onPressed: () => setState(() => _selectedTab = index),
         style: ElevatedButton.styleFrom(
-          backgroundColor: _selectedTab == index ? _primaryColor : Colors.grey[200],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          backgroundColor:
+              _selectedTab == index ? _primaryColor : Colors.grey[200],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(vertical: 12),
           elevation: 0,
         ),
@@ -113,22 +116,20 @@ class _TransactionsPageState extends State<TransactionsPage> {
     return Center(
       child: Text(
         'You must be logged in to view transactions.',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          color: _secondaryTextColor,
-        ),
+        style: TextStyle(fontFamily: 'Poppins', color: _secondaryTextColor),
       ),
     );
   }
 
   Widget _buildLaundryOrders(User user) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('customers')
-          .doc(user.uid)
-          .collection('laundryOrders')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance
+              .collection('customers')
+              .doc(user.uid)
+              .collection('laundryOrders')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoading();
@@ -145,12 +146,13 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   Widget _buildWaterOrders(User user) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('customers')
-          .doc(user.uid)
-          .collection('waterOrders')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance
+              .collection('customers')
+              .doc(user.uid)
+              .collection('waterOrders')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoading();
@@ -199,10 +201,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
         final weight = data['weight']?.toString() ?? '0';
         final totalAmount = data['totalAmount'] ?? 0.0;
         final deliveryMode = data['deliveryMode'] ?? 'Unknown';
-        final timestamp = data['createdAt'] != null
-            ? (data['createdAt'] as Timestamp).toDate()
-            : null;
-        final extras = data['extras'] is List ? data['extras'] as List<dynamic> : [];
+        final timestamp =
+            data['createdAt'] != null
+                ? (data['createdAt'] as Timestamp).toDate()
+                : null;
+        final extras =
+            data['extras'] is List ? data['extras'] as List<dynamic> : [];
 
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -265,11 +269,16 @@ class _TransactionsPageState extends State<TransactionsPage> {
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: extras.map((extra) => Chip(
-                    label: Text(extra.toString()),
-                    backgroundColor: Colors.grey[100],
-                    labelStyle: const TextStyle(fontSize: 12),
-                  )).toList(),
+                  children:
+                      extras
+                          .map(
+                            (extra) => Chip(
+                              label: Text(extra.toString()),
+                              backgroundColor: Colors.grey[100],
+                              labelStyle: const TextStyle(fontSize: 12),
+                            ),
+                          )
+                          .toList(),
                 ),
               ],
               const SizedBox(height: 8),
@@ -328,9 +337,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
         final quantity = data['quantity']?.toString() ?? '0';
         final totalPrice = data['totalPrice'] ?? 0.0;
         final deliveryMode = data['deliveryMode'] ?? 'Unknown';
-        final timestamp = data['createdAt'] != null
-            ? (data['createdAt'] as Timestamp).toDate()
-            : null;
+        final timestamp =
+            data['createdAt'] != null
+                ? (data['createdAt'] as Timestamp).toDate()
+                : null;
         final containerType = data['containerType'] ?? 'Unknown';
 
         return Container(
@@ -436,14 +446,17 @@ class _TransactionsPageState extends State<TransactionsPage> {
     );
   }
 
-  void _viewReceipt(BuildContext context, Map<String, dynamic> data, bool isLaundry) {
+  void _viewReceipt(
+    BuildContext context,
+    Map<String, dynamic> data,
+    bool isLaundry,
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ReceiptPage(
-          orderData: data,
-          isLaundryOrder: isLaundry,
-        ),
+        builder:
+            (context) =>
+                ReceiptPage(orderData: data, isLaundryOrder: isLaundry),
       ),
     );
   }
