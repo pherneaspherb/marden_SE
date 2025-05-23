@@ -15,7 +15,6 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneNumberController = TextEditingController(); // Added
-  final _addressController = TextEditingController(); // Added
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -69,7 +68,6 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
               'lastName': _lastNameController.text.trim(),
               'email': email,
               'phoneNumber': _phoneNumberController.text.trim(), // Added
-              'address': _addressController.text.trim(), // Added
               'role': 'customer',
               'createdAt': Timestamp.now(),
             });
@@ -156,7 +154,6 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
                       'Phone Number',
                       isNumber: true,
                     ), // Added
-                    _buildTextField(_addressController, 'Address'), // Added
                     _buildTextField(
                       _passwordController,
                       'Password',

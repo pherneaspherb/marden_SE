@@ -1,13 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'addCustomerAddressPage.dart';
 
 class CustomerAddressBookPage extends StatefulWidget {
   @override
-  _CustomerAddressBookPageState createState() => _CustomerAddressBookPageState();
+  _CustomerAddressBookPageState createState() =>
+      _CustomerAddressBookPageState();
 }
 
 class _CustomerAddressBookPageState extends State<CustomerAddressBookPage> {
-  Map<String, dynamic>? _savedAddress;
+  List<Map<String, dynamic>> _savedAddresses = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAddresses();
+  }
+
+  Future<void> _loadAddresses() async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+      final userRef = FirebaseFirestore.instance
+          .collection('customers')
+          .doc(userId);
+      final snapshot = await userRef.collection('addresses').get();
+
+      final addresses =
+          snapshot.docs.map((doc) {
+            final data = doc.data();
+            return {
+              'id': doc.id, // Add doc ID to identify the document
+              'street': data['street'] ?? '',
+              'barangay': data['barangay'] ?? '',
+              'municipality': data['municipality'] ?? '',
+              'city': data['city'] ?? '',
+              'instructions': data['instructions'] ?? '',
+              'isDefault': data['isDefault'] ?? false,
+            };
+          }).toList();
+
+      setState(() {
+        _savedAddresses = addresses;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load addresses: $e')));
+    }
+  }
+
+  void _addNewAddress(Map<String, dynamic> newAddress) {
+    setState(() {
+      _savedAddresses.add(newAddress);
+    });
+  }
+
+  void _updateAddress(int index, Map<String, dynamic> updatedAddress) {
+    setState(() {
+      _savedAddresses[index] = updatedAddress;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,15 +92,11 @@ class _CustomerAddressBookPageState extends State<CustomerAddressBookPage> {
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => AddCustomerAddressPage(),
-                  ),
+                  MaterialPageRoute(builder: (_) => AddCustomerAddressPage()),
                 );
 
                 if (result != null && result is Map<String, dynamic>) {
-                  setState(() {
-                    _savedAddress = result;
-                  });
+                  _addNewAddress(result);
                 }
               },
               icon: Icon(Icons.add, color: Color(0xFF4B007D)),
@@ -63,58 +117,102 @@ class _CustomerAddressBookPageState extends State<CustomerAddressBookPage> {
             ),
             SizedBox(height: 24),
             Divider(),
-
-            if (_savedAddress != null) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.location_on, color: Colors.black),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${_savedAddress!['firstName']} ${_savedAddress!['lastName']}',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(_savedAddress!['phone']),
-                        SizedBox(height: 4),
-                        Text(
-                          '${_savedAddress!['street']}, ${_savedAddress!['barangay']}, ${_savedAddress!['municipality']}, ${_savedAddress!['city']}',
-                          style: TextStyle(fontStyle: FontStyle.italic),
-                        ),
-                        SizedBox(height: 8),
-                        OutlinedButton(
-                          onPressed: () {
-                            // Set default address logic if needed
-                          },
-                          child: Text('Default Address'),
-                          style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            side: BorderSide(color: Colors.black),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            if (_isLoading)
+              Center(child: CircularProgressIndicator())
+            else if (_savedAddresses.isEmpty)
+              Center(child: Text('No saved addresses yet.'))
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _savedAddresses.length,
+                  itemBuilder: (context, index) {
+                    final address = _savedAddresses[index];
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.location_on, color: Colors.black),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Address:',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '${address['street']}, ${address['barangay']}, ${address['municipality']}, ${address['city']}',
+                                  style: TextStyle(fontStyle: FontStyle.italic),
+                                ),
+                                if (address['instructions'] != null &&
+                                    address['instructions']
+                                        .toString()
+                                        .isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(
+                                      'Instructions: ${address['instructions']}',
+                                      style: TextStyle(
+                                        fontStyle: FontStyle.italic,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                SizedBox(height: 8),
+                                if (address['isDefault'] == true)
+                                  OutlinedButton(
+                                    onPressed: () {
+                                      // Optional logic for default address
+                                    },
+                                    child: Text('Default Address'),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 4,
+                                      ),
+                                      side: BorderSide(color: Colors.black),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      // Optional: navigate to edit page
-                    },
-                    child: Text(
-                      'Edit',
-                      style: TextStyle(
-                        color: Colors.purple,
-                        fontWeight: FontWeight.w500,
+                          SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () async {
+                              final editedAddress = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => AddCustomerAddressPage(
+                                        existingAddress: address,
+                                      ),
+                                ),
+                              );
+
+                              if (editedAddress != null &&
+                                  editedAddress is Map<String, dynamic>) {
+                                _updateAddress(index, editedAddress);
+                              }
+                            },
+                            child: Text(
+                              'Edit',
+                              style: TextStyle(
+                                color: Colors.purple,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
-              )
-            ]
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),

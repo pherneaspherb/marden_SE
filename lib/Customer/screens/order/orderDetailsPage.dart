@@ -20,9 +20,11 @@ class OrderDetailsPage extends StatelessWidget {
     // Fallback customer name from orderData (to show immediately)
     final firstNameFallback = orderData['firstName']?.toString() ?? '';
     final lastNameFallback = orderData['lastName']?.toString() ?? '';
-    final customerNameFallback = (firstNameFallback + ' ' + lastNameFallback).trim();
+    final customerNameFallback =
+        (firstNameFallback + ' ' + lastNameFallback).trim();
 
-    final status = orderData['status']?.toString().toLowerCase() ?? 'processing';
+    final status =
+        orderData['status']?.toString().toLowerCase() ?? 'processing';
 
     // Text style
     final sectionTitleStyle = TextStyle(
@@ -85,7 +87,8 @@ class OrderDetailsPage extends StatelessWidget {
                     orderData['serviceType']?.toString() ?? '',
                   ),
                   if (orderType == 'laundry') ...[
-                    if ((orderData['extras'] as List<dynamic>?)?.isNotEmpty ?? false)
+                    if ((orderData['extras'] as List<dynamic>?)?.isNotEmpty ??
+                        false)
                       _buildDetailRow(
                         'Others',
                         (orderData['extras'] as List<dynamic>).join(', '),
@@ -94,7 +97,8 @@ class OrderDetailsPage extends StatelessWidget {
                       _buildDetailRow('Weight', '${orderData['weight']}kg'),
                   ],
                   if (orderType == 'waterOrders') ...[
-                    if (orderData['containerType']?.toString().isNotEmpty ?? false)
+                    if (orderData['containerType']?.toString().isNotEmpty ??
+                        false)
                       _buildDetailRow(
                         'Container Type',
                         orderData['containerType'],
@@ -115,7 +119,8 @@ class OrderDetailsPage extends StatelessWidget {
                       'Instructions',
                       orderData['instructions'].toString(),
                     ),
-                  if (orderData['paymentMethod']?.toString().isNotEmpty ?? false)
+                  if (orderData['paymentMethod']?.toString().isNotEmpty ??
+                      false)
                     _buildDetailRow(
                       'Payment Method',
                       orderData['paymentMethod'].toString(),
@@ -130,9 +135,13 @@ class OrderDetailsPage extends StatelessWidget {
 
                   // Customer Name: FutureBuilder only for the name widget
                   FutureBuilder<DocumentSnapshot>(
-                    future: uid == null
-                        ? Future.value(null)
-                        : FirebaseFirestore.instance.collection('customers').doc(uid).get(),
+                    future:
+                        uid == null
+                            ? Future.value(null)
+                            : FirebaseFirestore.instance
+                                .collection('customers')
+                                .doc(uid)
+                                .get(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return _buildDetailRow(
@@ -143,34 +152,61 @@ class OrderDetailsPage extends StatelessWidget {
                         );
                       }
                       if (snapshot.hasData && snapshot.data!.exists) {
-                        final userData = snapshot.data!.data() as Map<String, dynamic>;
+                        final userData =
+                            snapshot.data!.data() as Map<String, dynamic>;
                         final firstName =
-                            orderData['firstName']?.toString() ?? userData['firstName']?.toString() ?? '';
+                            orderData['firstName']?.toString() ??
+                            userData['firstName']?.toString() ??
+                            '';
                         final lastName =
-                            orderData['lastName']?.toString() ?? userData['lastName']?.toString() ?? '';
-                        final customerName = (firstName + ' ' + lastName).trim();
+                            orderData['lastName']?.toString() ??
+                            userData['lastName']?.toString() ??
+                            '';
+                        final customerName =
+                            (firstName + ' ' + lastName).trim();
                         return _buildDetailRow('Name', customerName);
                       }
                       return _buildDetailRow(
                         'Name',
-                        customerNameFallback.isNotEmpty ? customerNameFallback : 'Name not available',
+                        customerNameFallback.isNotEmpty
+                            ? customerNameFallback
+                            : 'Name not available',
                       );
                     },
                   ),
 
-                  _buildDetailRow(
-                    'Address',
-                    _getAddress(orderData, null), // Passing null userData here; could add another FutureBuilder if needed
+                  FutureBuilder<DocumentSnapshot>(
+                    future:
+                        uid == null
+                            ? Future.value(null)
+                            : FirebaseFirestore.instance
+                                .collection('customers')
+                                .doc(uid)
+                                .get(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return _buildDetailRow('Address', 'Loading address...');
+                      }
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final userData =
+                            snapshot.data!.data() as Map<String, dynamic>;
+                        return _buildDetailRow(
+                          'Address',
+                          _getAddress(orderData, userData),
+                        );
+                      }
+                      return _buildDetailRow(
+                        'Address',
+                        _getAddress(orderData, null),
+                      );
+                    },
                   ),
 
                   SizedBox(height: 24),
 
                   // Total Amount
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 16,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(12),
@@ -250,17 +286,18 @@ class OrderDetailsPage extends StatelessWidget {
     Map<String, dynamic> orderData,
     Map<String, dynamic>? userData,
   ) {
-    final address = orderData['address'];
+    final address = orderData['defaultAddress'];
 
     if (address is Map) {
       final addressMap = Map<String, dynamic>.from(address);
-      final components = [
-        addressMap['street'],
-        addressMap['house'],
-        addressMap['barangay'],
-        addressMap['municipality'],
-        addressMap['city'],
-      ].where((c) => c != null && c.toString().isNotEmpty).toList();
+      final components =
+          [
+            addressMap['street'],
+            addressMap['house'],
+            addressMap['barangay'],
+            addressMap['municipality'],
+            addressMap['city'],
+          ].where((c) => c != null && c.toString().isNotEmpty).toList();
       return components.join(', ');
     }
 
@@ -273,15 +310,17 @@ class OrderDetailsPage extends StatelessWidget {
       final fallbackAddress = userData['defaultAddress'];
       if (fallbackAddress is Map) {
         final fallbackMap = Map<String, dynamic>.from(fallbackAddress);
-        final components = [
-          fallbackMap['street'],
-          fallbackMap['house'],
-          fallbackMap['barangay'],
-          fallbackMap['municipality'],
-          fallbackMap['city'],
-        ].where((c) => c != null && c.toString().isNotEmpty).toList();
+        final components =
+            [
+              fallbackMap['street'],
+              fallbackMap['house'],
+              fallbackMap['barangay'],
+              fallbackMap['municipality'],
+              fallbackMap['city'],
+            ].where((c) => c != null && c.toString().isNotEmpty).toList();
         return components.join(', ');
-      } else if (fallbackAddress is String && fallbackAddress.trim().isNotEmpty) {
+      } else if (fallbackAddress is String &&
+          fallbackAddress.trim().isNotEmpty) {
         return fallbackAddress;
       }
     }
