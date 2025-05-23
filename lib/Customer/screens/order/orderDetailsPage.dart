@@ -17,246 +17,192 @@ class OrderDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('customers').doc(uid).get(),
-      builder: (context, snapshot) {
-        final userData = snapshot.data?.data() as Map<String, dynamic>?;
+    // Fallback customer name from orderData (to show immediately)
+    final firstNameFallback = orderData['firstName']?.toString() ?? '';
+    final lastNameFallback = orderData['lastName']?.toString() ?? '';
+    final customerNameFallback = (firstNameFallback + ' ' + lastNameFallback).trim();
 
-        final firstName =
-            orderData['firstName']?.toString() ??
-            userData?['firstName']?.toString() ??
-            '';
-        final lastName =
-            orderData['lastName']?.toString() ??
-            userData?['lastName']?.toString() ??
-            '';
-        final customerName =
-            (firstName + ' ' + lastName).trim().isNotEmpty
-                ? (firstName + ' ' + lastName).trim()
-                : 'Customer Name';
+    final status = orderData['status']?.toString().toLowerCase() ?? 'processing';
 
-        final status =
-            orderData['status']?.toString()?.toLowerCase() ?? 'processing';
+    // Text style
+    final sectionTitleStyle = TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+      color: Colors.black87,
+    );
 
-        // Define text styles
-        final sectionTitleStyle = TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        );
-
-        return Scaffold(
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Status Header Section
-                Container(
-                  decoration: BoxDecoration(
-                    color: Color(0xFF4B007D),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status Header Section
+            Container(
+              decoration: BoxDecoration(
+                color: Color(0xFF4B007D),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  Expanded(
+                    child: Text(
+                      _getStatusMessage(status),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      Expanded(
-                        child: Text(
-                          _getStatusMessage(status),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 48), // To balance IconButton spacing
-                    ],
-                  ),
-                ),
-
-                // Main Content
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 30),
-
-                      // Breakdown Section
-                      Text('Breakdown', style: sectionTitleStyle),
-                      Divider(thickness: 1),
-                      SizedBox(height: 8),
-
-                      _buildDetailRow(
-                        'Service',
-                        orderData['serviceType']?.toString() ?? '',
-                      ),
-                      if (orderType == 'laundry') ...[
-                        if ((orderData['extras'] as List<dynamic>?)
-                                ?.isNotEmpty ??
-                            false)
-                          _buildDetailRow(
-                            'Others',
-                            (orderData['extras'] as List<dynamic>).join(', '),
-                          ),
-                        if (orderData['weight'] != null)
-                          _buildDetailRow('Weight', '${orderData['weight']}kg'),
-                      ],
-                      if (orderType == 'waterOrders') ...[
-                        if (orderData['containerType']?.toString().isNotEmpty ??
-                            false)
-                          _buildDetailRow(
-                            'Container Type',
-                            orderData['containerType'],
-                          ),
-                        if (orderData['quantity'] != null)
-                          _buildDetailRow(
-                            'Quantity',
-                            orderData['quantity'].toString(),
-                          ),
-                      ],
-                      if (orderData['deliveryMode']?.toString().isNotEmpty ??
-                          false)
-                        _buildDetailRow(
-                          'Delivery Mode',
-                          orderData['deliveryMode'].toString(),
-                        ),
-                      if (orderData['instructions']?.toString().isNotEmpty ??
-                          false)
-                        _buildDetailRow(
-                          'Instructions',
-                          orderData['instructions'].toString(),
-                        ),
-                      if (orderData['paymentMethod']?.toString().isNotEmpty ??
-                          false)
-                        _buildDetailRow(
-                          'Payment Method',
-                          orderData['paymentMethod'].toString(),
-                        ),
-
-                      SizedBox(height: 24),
-
-                      // Details Section
-                      Text('Details', style: sectionTitleStyle),
-                      Divider(thickness: 1),
-                      SizedBox(height: 8),
-
-                      _buildDetailRow('Name', customerName),
-                      _buildDetailRow(
-                        'Address',
-                        _getAddress(orderData, userData),
-                      ),
-
-                      SizedBox(height: 24),
-
-                      // Total Amount
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'TOTAL :',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              _buildFormattedTotal(orderData, orderType),
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                  SizedBox(width: 48), // To balance IconButton spacing
+                ],
+              ),
             ),
-          ),
-        );
-      },
+
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 30),
+
+                  // Breakdown Section
+                  Text('Breakdown', style: sectionTitleStyle),
+                  Divider(thickness: 1),
+                  SizedBox(height: 8),
+
+                  _buildDetailRow(
+                    'Service',
+                    orderData['serviceType']?.toString() ?? '',
+                  ),
+                  if (orderType == 'laundry') ...[
+                    if ((orderData['extras'] as List<dynamic>?)?.isNotEmpty ?? false)
+                      _buildDetailRow(
+                        'Others',
+                        (orderData['extras'] as List<dynamic>).join(', '),
+                      ),
+                    if (orderData['weight'] != null)
+                      _buildDetailRow('Weight', '${orderData['weight']}kg'),
+                  ],
+                  if (orderType == 'waterOrders') ...[
+                    if (orderData['containerType']?.toString().isNotEmpty ?? false)
+                      _buildDetailRow(
+                        'Container Type',
+                        orderData['containerType'],
+                      ),
+                    if (orderData['quantity'] != null)
+                      _buildDetailRow(
+                        'Quantity',
+                        orderData['quantity'].toString(),
+                      ),
+                  ],
+                  if (orderData['deliveryMode']?.toString().isNotEmpty ?? false)
+                    _buildDetailRow(
+                      'Delivery Mode',
+                      orderData['deliveryMode'].toString(),
+                    ),
+                  if (orderData['instructions']?.toString().isNotEmpty ?? false)
+                    _buildDetailRow(
+                      'Instructions',
+                      orderData['instructions'].toString(),
+                    ),
+                  if (orderData['paymentMethod']?.toString().isNotEmpty ?? false)
+                    _buildDetailRow(
+                      'Payment Method',
+                      orderData['paymentMethod'].toString(),
+                    ),
+
+                  SizedBox(height: 24),
+
+                  // Details Section
+                  Text('Details', style: sectionTitleStyle),
+                  Divider(thickness: 1),
+                  SizedBox(height: 8),
+
+                  // Customer Name: FutureBuilder only for the name widget
+                  FutureBuilder<DocumentSnapshot>(
+                    future: uid == null
+                        ? Future.value(null)
+                        : FirebaseFirestore.instance.collection('customers').doc(uid).get(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return _buildDetailRow(
+                          'Name',
+                          customerNameFallback.isNotEmpty
+                              ? customerNameFallback
+                              : 'Loading name...',
+                        );
+                      }
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final userData = snapshot.data!.data() as Map<String, dynamic>;
+                        final firstName =
+                            orderData['firstName']?.toString() ?? userData['firstName']?.toString() ?? '';
+                        final lastName =
+                            orderData['lastName']?.toString() ?? userData['lastName']?.toString() ?? '';
+                        final customerName = (firstName + ' ' + lastName).trim();
+                        return _buildDetailRow('Name', customerName);
+                      }
+                      return _buildDetailRow(
+                        'Name',
+                        customerNameFallback.isNotEmpty ? customerNameFallback : 'Name not available',
+                      );
+                    },
+                  ),
+
+                  _buildDetailRow(
+                    'Address',
+                    _getAddress(orderData, null), // Passing null userData here; could add another FutureBuilder if needed
+                  ),
+
+                  SizedBox(height: 24),
+
+                  // Total Amount
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'TOTAL :',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          _buildFormattedTotal(orderData, orderType),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
-  }
-
-  String _buildFormattedTotal(Map<String, dynamic> data, String orderType) {
-    double total = 0;
-
-    final priceRaw = data['totalPrice'] ?? data['totalAmount'];
-
-    if (priceRaw is int) {
-      total = priceRaw.toDouble();
-    } else if (priceRaw is double) {
-      total = priceRaw;
-    } else if (priceRaw is String) {
-      total = double.tryParse(priceRaw) ?? 0;
-    }
-    print('totalPrice type: ${priceRaw.runtimeType}, value: $priceRaw');
-
-
-    return '₱${NumberFormat('#,##0.00').format(total)}';
-  }
-
-  String _getAddress(
-    Map<String, dynamic> orderData,
-    Map<String, dynamic>? userData,
-  ) {
-    final address = orderData['address'];
-
-    if (address is Map) {
-      final addressMap = Map<String, dynamic>.from(address);
-      final components =
-          [
-            addressMap['street'],
-            addressMap['house'],
-            addressMap['barangay'],
-            addressMap['municipality'],
-            addressMap['city'],
-          ].where((c) => c != null && c.toString().isNotEmpty).toList();
-      return components.join(', ');
-    }
-
-    if (address is String && address.trim().length > 10) {
-      return address;
-    }
-
-    // Use fallback from user data
-    final fallbackAddress = userData?['defaultAddress'];
-    if (fallbackAddress is Map) {
-      final fallbackMap = Map<String, dynamic>.from(fallbackAddress);
-      final components =
-          [
-            fallbackMap['street'],
-            fallbackMap['house'],
-            fallbackMap['barangay'],
-            fallbackMap['municipality'],
-            fallbackMap['city'],
-          ].where((c) => c != null && c.toString().isNotEmpty).toList();
-      return components.join(', ');
-    } else if (fallbackAddress is String && fallbackAddress.trim().isNotEmpty) {
-      return fallbackAddress;
-    }
-
-    return 'No Address Provided';
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -266,7 +212,7 @@ class OrderDetailsPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120, // Fixed width for label column
+            width: 120,
             child: Text(
               label,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
@@ -282,6 +228,65 @@ class OrderDetailsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _buildFormattedTotal(Map<String, dynamic> data, String orderType) {
+    double total = 0;
+
+    final priceRaw = data['totalPrice'] ?? data['totalAmount'];
+
+    if (priceRaw is int) {
+      total = priceRaw.toDouble();
+    } else if (priceRaw is double) {
+      total = priceRaw;
+    } else if (priceRaw is String) {
+      total = double.tryParse(priceRaw) ?? 0;
+    }
+
+    return '₱${NumberFormat('#,##0.00').format(total)}';
+  }
+
+  String _getAddress(
+    Map<String, dynamic> orderData,
+    Map<String, dynamic>? userData,
+  ) {
+    final address = orderData['address'];
+
+    if (address is Map) {
+      final addressMap = Map<String, dynamic>.from(address);
+      final components = [
+        addressMap['street'],
+        addressMap['house'],
+        addressMap['barangay'],
+        addressMap['municipality'],
+        addressMap['city'],
+      ].where((c) => c != null && c.toString().isNotEmpty).toList();
+      return components.join(', ');
+    }
+
+    if (address is String && address.trim().length > 10) {
+      return address;
+    }
+
+    // fallback
+    if (userData != null) {
+      final fallbackAddress = userData['defaultAddress'];
+      if (fallbackAddress is Map) {
+        final fallbackMap = Map<String, dynamic>.from(fallbackAddress);
+        final components = [
+          fallbackMap['street'],
+          fallbackMap['house'],
+          fallbackMap['barangay'],
+          fallbackMap['municipality'],
+          fallbackMap['city'],
+        ].where((c) => c != null && c.toString().isNotEmpty).toList();
+        return components.join(', ');
+      } else if (fallbackAddress is String && fallbackAddress.trim().isNotEmpty) {
+        return fallbackAddress;
+      }
+    }
+
+    return 'No Address Provided';
   }
 
   String _getStatusMessage(String status) {

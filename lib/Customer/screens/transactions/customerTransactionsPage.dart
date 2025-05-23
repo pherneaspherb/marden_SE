@@ -7,6 +7,7 @@ import 'receiptPage.dart';
 class TransactionsPage extends StatefulWidget {
   @override
   _TransactionsPageState createState() => _TransactionsPageState();
+  int _selectedTab = 0; // e.g., 0 = Transaction A, 1 = Transaction B
 }
 
 class _TransactionsPageState extends State<TransactionsPage> {
@@ -34,11 +35,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
             color: Colors.white,
           ),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16.0),
-          ),
-        ],
+        actions: const [Padding(padding: EdgeInsets.only(right: 16.0))],
       ),
       body: SafeArea(
         child: Column(
@@ -90,22 +87,36 @@ class _TransactionsPageState extends State<TransactionsPage> {
   }
 
   Widget _buildTabButton(int index, String text) {
+    final isSelected = _selectedTab == index;
+
     return Expanded(
-      child: ElevatedButton(
-        onPressed: () => setState(() => _selectedTab = index),
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _selectedTab == index ? _primaryColor : Colors.grey[200],
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          elevation: 0,
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            color: _selectedTab == index ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w500,
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedTab = index),
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: isSelected ? _primaryColor : Colors.grey[200],
+            borderRadius: BorderRadius.circular(12),
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ]
+                    : [],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            text,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: isSelected ? Colors.white : Colors.black87,
+            ),
           ),
         ),
       ),
@@ -364,7 +375,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.water_drop, color: _primaryColor),
+                  Icon(Icons.local_drink, color: Colors.blue),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
