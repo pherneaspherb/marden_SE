@@ -79,6 +79,9 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
       gradient = LinearGradient(colors: [Colors.orange, Colors.deepOrange]);
     }
 
+    // Map for prices:
+    final prices = {'Wash & Dry': 150, 'Wash Only': 90, 'Dry Only': 60};
+
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -93,7 +96,7 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
             height: 70,
             decoration: BoxDecoration(
               gradient: isSelected ? gradient : null,
-              color: isSelected ? null : Colors.grey[300],
+              color: isSelected ? null : Colors.deepPurple[100],
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.grey),
             ),
@@ -102,13 +105,27 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
               children: [
                 Icon(icon, color: isSelected ? Colors.white : Colors.black),
                 SizedBox(width: 6),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '₱${prices[label]}',
+                      style: TextStyle(
+                        color: isSelected ? Colors.white70 : Colors.black54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -189,6 +206,10 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
               ),
               CheckboxListTile(
                 title: Text('Fabric Softener'),
+                secondary: Text(
+                  '₱50',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black,),
+                ),
                 value: addSoftener,
                 onChanged:
                     (value) => setState(() {
@@ -197,8 +218,13 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
                     }),
                 controlAffinity: ListTileControlAffinity.trailing,
               ),
+
               CheckboxListTile(
                 title: Text('Fold'),
+                secondary: Text(
+                  '₱25',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black,),
+                ),
                 value: foldClothes,
                 onChanged:
                     (value) => setState(() {
@@ -207,15 +233,17 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
                     }),
                 controlAffinity: ListTileControlAffinity.trailing,
               ),
+
               SizedBox(height: 20),
               Text(
                 'Weight',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text(
-                'Prices may vary depending on laundry weight (max. 7 kg)',
+                '₱10 per kilogram (max. 7 kg)',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
+
               SizedBox(height: 10),
               Row(
                 children: [
@@ -255,7 +283,19 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
                     }),
               ),
               RadioListTile(
-                title: Text('Deliver'),
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Deliver'),
+                    Text(
+                      '₱15',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
                 value: 'Deliver',
                 groupValue: deliveryMode,
                 onChanged:
@@ -264,6 +304,7 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
                       _calculateTotal();
                     }),
               ),
+
               SizedBox(height: 30),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

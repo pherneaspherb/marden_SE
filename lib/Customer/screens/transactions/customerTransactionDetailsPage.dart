@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 class TransactionDetailsPage extends StatelessWidget {
   final Map<String, dynamic> orderData;
   final String orderType;
+
   static const _purpleColor = Color(0xFF4B007D);
 
   const TransactionDetailsPage({
@@ -14,21 +15,31 @@ class TransactionDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalAmount = orderData['totalAmount'] ?? 0;
-    final dateTime = orderData['timestamp']?.toDate();
+    // Parse timestamp (supporting Firestore Timestamp or DateTime)
+    final timestampRaw = orderData['createdAt'] ?? orderData['timestamp'];
+    final DateTime? dateTime = _parseTimestamp(timestampRaw);
     final formattedDate = dateTime != null
         ? DateFormat('dd MMM yyyy  hh:mm a').format(dateTime)
         : 'N/A';
 
+    // Total amount differs by order type
+    final totalAmount = (orderType.toLowerCase() == 'laundry')
+        ? (orderData['totalAmount'] ?? 0)
+        : (orderData['totalPrice'] ?? 0);
+
+    const sectionTitleStyle = TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+      color: Colors.black87,
+    );
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+      body: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Purple Header
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
               decoration: const BoxDecoration(
                 color: _purpleColor,
                 borderRadius: BorderRadius.only(
@@ -36,218 +47,174 @@ class TransactionDetailsPage extends StatelessWidget {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+              child: Row(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'Thank you for being\nwith us.',
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  const Expanded(
+                    child: Text(
+                      'Transaction Details',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 48), // To balance IconButton width
                 ],
               ),
             ),
 
-            // Scrollable content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(top: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // TOTAL PAID
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'TOTAL PAID:',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          Text(
-                            '₱${totalAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: _purpleColor,
-                            ),
-                          ),
-                        ],
-                      ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Breakdown Section
+                  const Text('Breakdown', style: sectionTitleStyle),
+                  const Divider(thickness: 1),
+                  const SizedBox(height: 8),
+
+                  // Conditional details based on order type
+                  if (orderType.toLowerCase() == 'laundry') ..._buildLaundryDetails(),
+                  if (orderType.toLowerCase() == 'water') ..._buildWaterDetails(),
+
+                  const SizedBox(height: 24),
+
+                  // Order Details Section
+                  const Text('Order Details', style: sectionTitleStyle),
+                  const Divider(thickness: 1),
+                  const SizedBox(height: 8),
+
+                  Text(
+                    formattedDate,
+                    style: const TextStyle(color: Colors.black54, fontSize: 16),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Total Paid Container
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
                     ),
-
-                    const Divider(
-                      thickness: 1,
-                      height: 30,
-                      indent: 24,
-                      endIndent: 24,
-                      color: _purpleColor,
-                    ),
-
-                    // Breakdown
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Table(
-                        columnWidths: const {
-                          0: FlexColumnWidth(2),
-                          1: FlexColumnWidth(3),
-                        },
-                        children: [
-                          const TableRow(
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.symmetric(vertical: 8.0),
-                                child: Text(
-                                  'Breakdown',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              SizedBox(),
-                            ],
-                          ),
-                          TableRow(
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 4.0),
-                                child: Text('Service'),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 4.0,
-                                ),
-                                child: Text(
-                                  orderType,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (orderData['additionalService'] != null)
-                            TableRow(
-                              children: [
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 4.0),
-                                  child: Text('Extras'),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 4.0,
-                                  ),
-                                  child: Text(
-                                    '${orderData['additionalService']}',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (orderData['weight'] != null)
-                            TableRow(
-                              children: [
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 4.0),
-                                  child: Text('Weight'),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 4.0,
-                                  ),
-                                  child: Text(
-                                    '${orderData['weight']}kg',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          TableRow(
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 4.0),
-                                child: Text(
-                                  'Total',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 4.0,
-                                ),
-                                child: Text(
-                                  '₱${totalAmount.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    color: _purpleColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Order Details
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Order Details',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Text(
-                        formattedDate,
-                        style: const TextStyle(color: Colors.black54),
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Download Button
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // TODO: download logic
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _purpleColor,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: const Text(
-                            'Download Receipt',
-                            style: TextStyle(fontSize: 16, color: Colors.white),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'TOTAL PAID:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
+                        Text(
+                          '₱${(totalAmount as num).toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
 
-                    const SizedBox(height: 40),
-                  ],
-                ),
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Helper to parse Firestore Timestamp or DateTime
+  DateTime? _parseTimestamp(dynamic timestamp) {
+    if (timestamp == null) return null;
+    if (timestamp is DateTime) return timestamp;
+    try {
+      // Firestore Timestamp has toDate()
+      final toDateMethod = timestamp.toDate;
+      if (toDateMethod is Function) {
+        return timestamp.toDate();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Builds laundry-specific details
+  List<Widget> _buildLaundryDetails() {
+    final List<Widget> widgets = [];
+
+    widgets.add(_buildDetailRow('Service', orderData['serviceType'] ?? 'Laundry'));
+
+    if (orderData['extras'] != null && orderData['extras'] is List && (orderData['extras'] as List).isNotEmpty) {
+      widgets.add(_buildDetailRow('Extras', (orderData['extras'] as List).join(', ')));
+    }
+
+    if (orderData['weight'] != null) {
+      widgets.add(_buildDetailRow('Weight', '${orderData['weight']} kg'));
+    }
+
+    if (orderData['deliveryMode'] != null) {
+      widgets.add(_buildDetailRow('Delivery Mode', orderData['deliveryMode']));
+    }
+
+    return widgets;
+  }
+
+  /// Builds water-specific details
+  List<Widget> _buildWaterDetails() {
+    final List<Widget> widgets = [];
+
+    widgets.add(_buildDetailRow('Type', orderData['type'] ?? 'Water'));
+
+    if (orderData['quantity'] != null) {
+      widgets.add(_buildDetailRow('Quantity', '${orderData['quantity']} container(s)'));
+    }
+
+    if (orderData['containerType'] != null) {
+      widgets.add(_buildDetailRow('Container Type', orderData['containerType']));
+    }
+
+    if (orderData['deliveryMode'] != null) {
+      widgets.add(_buildDetailRow('Delivery Mode', orderData['deliveryMode']));
+    }
+
+    return widgets;
+  }
+
+  /// Helper method to build label-value row
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
       ),
     );
   }

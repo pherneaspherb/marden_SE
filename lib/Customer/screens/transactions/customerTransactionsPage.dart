@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:final_project_laundry/Customer/screens/transactions/customerTransactionDetailsPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -466,8 +467,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
       context,
       MaterialPageRoute(
         builder:
-            (context) =>
-                ReceiptPage(orderData: data, isLaundryOrder: isLaundry),
+            (_) => TransactionDetailsPage(
+              orderData: data,
+              orderType: isLaundry ? 'Laundry' : 'Water',
+            ),
       ),
     );
   }

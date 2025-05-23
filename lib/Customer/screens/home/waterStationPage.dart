@@ -38,11 +38,12 @@ class _WaterStationPageState extends State<WaterStationPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => WaterPaymentPage(
-          selectedContainer: _selectedContainer,
-          quantity: _quantity,
-          deliveryMode: _deliveryMode,
-        ),
+        builder:
+            (context) => WaterPaymentPage(
+              selectedContainer: _selectedContainer,
+              quantity: _quantity,
+              deliveryMode: _deliveryMode,
+            ),
       ),
     );
   }
@@ -120,7 +121,19 @@ class _WaterStationPageState extends State<WaterStationPage> {
                 onChanged: (value) => setState(() => _deliveryMode = value!),
               ),
               RadioListTile(
-                title: Text('Deliver'),
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Deliver'),
+                    Text(
+                      '₱15',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
                 value: 'Deliver',
                 groupValue: _deliveryMode,
                 onChanged: (value) => setState(() => _deliveryMode = value!),
@@ -132,17 +145,11 @@ class _WaterStationPageState extends State<WaterStationPage> {
                 children: [
                   Text(
                     'TOTAL',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   Text(
-                    'PHP ${totalPrice.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                    '₱ ${totalPrice.toStringAsFixed(2)}',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ],
               ),
@@ -174,37 +181,56 @@ class _WaterStationPageState extends State<WaterStationPage> {
 
   Widget _buildContainerButton(String label) {
     final bool isSelected = _selectedContainer == label;
-    return Column(
-      children: [
-        ElevatedButton(
-          onPressed: () => setState(() => _selectedContainer = label),
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                isSelected ? Color(0xFF4B007D) : Colors.deepPurple[100],
-            foregroundColor: Colors.white,
-            minimumSize: Size(130, 100),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+
+    Gradient? gradient;
+    if (label == 'Tube') {
+      gradient = LinearGradient(colors: [Colors.blueAccent, Colors.indigo]);
+    } else if (label == 'Jug') {
+      gradient = LinearGradient(colors: [Colors.lightBlue, Colors.blue]);
+    }
+
+    return InkWell(
+      onTap: () => setState(() => _selectedContainer = label),
+      child: Container(
+        width: 130,
+        height: 100,
+        decoration: BoxDecoration(
+          gradient: isSelected ? gradient : null,
+          color: isSelected ? null : Colors.deepPurple[100],
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              label == 'Tube' ? Icons.water_drop : Icons.local_drink,
+              size: 30,
+              color: isSelected ? Colors.white : Colors.black,
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                label == 'Tube' ? Icons.water_drop : Icons.local_drink,
-                size: 30,
+            SizedBox(height: 8),
+            Text(
+              '$label Container',
+              style: TextStyle(
+                color:
+                    isSelected
+                        ? Colors.white
+                        : Colors.black, // <-- Changed here
+                fontWeight: FontWeight.w600,
               ),
-              SizedBox(height: 8),
-              Text('$label Container'),
-            ],
-          ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              '₱${_getContainerPrice(label).toStringAsFixed(2)}',
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
-        SizedBox(height: 6),
-        Text(
-          'PHP ${_getContainerPrice(label).toStringAsFixed(2)}',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ],
+      ),
     );
   }
 }
