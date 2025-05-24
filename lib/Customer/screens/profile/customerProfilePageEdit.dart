@@ -13,7 +13,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
+  // Removed _addressController
 
   bool _isLoading = false;
 
@@ -34,7 +34,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _firstNameController.text = data['firstName'] ?? '';
       _lastNameController.text = data['lastName'] ?? '';
       _phoneNumberController.text = data['phoneNumber'] ?? '';
-      _addressController.text = data['address'] ?? '';
+      // Removed address loading
     }
   }
 
@@ -50,7 +50,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       'firstName': _firstNameController.text.trim(),
       'lastName': _lastNameController.text.trim(),
       'phoneNumber': _phoneNumberController.text.trim(),
-      'address': _addressController.text.trim(),
+      // Removed address update
     });
 
     setState(() => _isLoading = false);
@@ -86,27 +86,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     TextFormField(
                       controller: _firstNameController,
                       decoration: InputDecoration(labelText: 'First Name'),
-                      validator: (value) => value!.isEmpty ? 'Please enter your first name' : null,
+                      validator: (value) =>
+                          value!.isEmpty ? 'Please enter your first name' : null,
                     ),
                     SizedBox(height: 16),
                     TextFormField(
                       controller: _lastNameController,
                       decoration: InputDecoration(labelText: 'Last Name'),
-                      validator: (value) => value!.isEmpty ? 'Please enter your last name' : null,
+                      validator: (value) =>
+                          value!.isEmpty ? 'Please enter your last name' : null,
                     ),
                     SizedBox(height: 16),
                     TextFormField(
                       controller: _phoneNumberController,
                       decoration: InputDecoration(labelText: 'Phone Number'),
-                      validator: (value) => value!.isEmpty ? 'Please enter your phone number' : null,
+                      validator: (value) =>
+                          value!.isEmpty ? 'Please enter your phone number' : null,
                       keyboardType: TextInputType.phone,
                     ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: InputDecoration(labelText: 'Address'),
-                      validator: (value) => value!.isEmpty ? 'Please enter your address' : null,
-                    ),
+                    // Removed Address input field
                     SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: _saveChanges,
