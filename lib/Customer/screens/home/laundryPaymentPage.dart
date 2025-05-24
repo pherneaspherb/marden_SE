@@ -21,6 +21,8 @@ class LaundryPaymentPage extends StatefulWidget {
   State<LaundryPaymentPage> createState() => _LaundryPaymentPageState();
 }
 
+Map<String, dynamic> laundryRates = {};
+
 class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
   final streetController = TextEditingController();
   final barangayController = TextEditingController();
@@ -35,8 +37,20 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
   @override
   void initState() {
     super.initState();
+    _loadServiceRates().then((_) => _calculateTotal());
     _calculateTotal();
     _loadDefaultAddress();
+  }
+
+  Future<void> _loadServiceRates() async {
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('services')
+            .doc('laundry')
+            .get();
+    setState(() {
+      laundryRates = doc.data() ?? {};
+    });
   }
 
   void _calculateTotal() {
@@ -44,22 +58,30 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
 
     switch (widget.serviceType) {
       case 'Wash & Dry':
-        baseRate = 150.0;
+        baseRate = (laundryRates['wash_and_dry'] ?? 0).toDouble();
         break;
       case 'Wash Only':
-        baseRate = 90.0;
+        baseRate = (laundryRates['wash_only'] ?? 0).toDouble();
         break;
       case 'Dry Only':
-        baseRate = 60.0;
+        baseRate = (laundryRates['dry_only'] ?? 0).toDouble();
         break;
     }
 
     double extras = 0.0;
-    if (widget.extras.contains('Fabric Softener')) extras += 50.0;
-    if (widget.extras.contains('Fold')) extras += 25.0;
+    if (widget.extras.contains('Fabric Softener')) {
+      extras += (laundryRates['fabric_softener'] ?? 0).toDouble();
+    }
+    if (widget.extras.contains('Fold')) {
+      extras += (laundryRates['fold'] ?? 0).toDouble();
+    }
 
-    double weightCharge = widget.weight * 10.0;
-    double deliveryFee = (widget.deliveryMode == 'Deliver') ? 15.0 : 0.0;
+    double weightCharge =
+        widget.weight * (laundryRates['per_kilogram'] ?? 0).toDouble();
+    double deliveryFee =
+        (widget.deliveryMode == 'Deliver')
+            ? (laundryRates['deliver'] ?? 0).toDouble()
+            : 0.0;
 
     setState(() {
       totalAmount = baseRate + weightCharge + extras + deliveryFee;

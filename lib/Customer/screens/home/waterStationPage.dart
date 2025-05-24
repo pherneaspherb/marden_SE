@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'waterPaymentPage.dart';
 
 class WaterStationPage extends StatefulWidget {
@@ -11,20 +12,41 @@ class _WaterStationPageState extends State<WaterStationPage> {
   int _quantity = 1;
   String _deliveryMode = 'Pick Up';
 
+  Map<String, dynamic>? _waterPrices;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWaterPrices();
+  }
+
+  Future<void> _fetchWaterPrices() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('services')
+        .doc('water')
+        .get();
+
+    setState(() {
+      _waterPrices = doc.data();
+      _loading = false;
+    });
+  }
+
   double _getContainerPrice(String container) {
-    switch (container) {
-      case 'Jug':
-        return 25.0;
-      case 'Tube':
-      default:
-        return 25.0;
+    if (_waterPrices == null) return 0;
+    if (container == 'Jug') {
+      return (_waterPrices?['jug_container'] ?? 0).toDouble();
+    } else {
+      return (_waterPrices?['tube_container'] ?? 0).toDouble();
     }
   }
 
   double get totalPrice {
+    if (_waterPrices == null) return 0;
     double baseTotal = _getContainerPrice(_selectedContainer) * _quantity;
     if (_deliveryMode == 'Deliver') {
-      baseTotal += 15.0; // Delivery fee
+      baseTotal += (_waterPrices?['deliver'] ?? 0).toDouble();
     }
     return baseTotal;
   }
@@ -38,18 +60,28 @@ class _WaterStationPageState extends State<WaterStationPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => WaterPaymentPage(
-              selectedContainer: _selectedContainer,
-              quantity: _quantity,
-              deliveryMode: _deliveryMode,
-            ),
+        builder: (context) => WaterPaymentPage(
+          selectedContainer: _selectedContainer,
+          quantity: _quantity,
+          deliveryMode: _deliveryMode,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Color(0xFF4B007D),
+          title: Text("Water Station", style: TextStyle(color: Colors.white)),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF4B007D),
@@ -69,10 +101,7 @@ class _WaterStationPageState extends State<WaterStationPage> {
           padding: const EdgeInsets.all(20),
           child: ListView(
             children: [
-              Text(
-                'Select a container',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text('Select a container', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -110,10 +139,7 @@ class _WaterStationPageState extends State<WaterStationPage> {
                 ],
               ),
               SizedBox(height: 24),
-              Text(
-                'Mode of Delivery',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text('Mode of Delivery', style: TextStyle(fontWeight: FontWeight.bold)),
               RadioListTile(
                 title: Text('Pick Up'),
                 value: 'Pick Up',
@@ -126,7 +152,7 @@ class _WaterStationPageState extends State<WaterStationPage> {
                   children: [
                     Text('Deliver'),
                     Text(
-                      '₱15',
+                      '₱${(_waterPrices?['deliver'] ?? 0).toString()}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -189,6 +215,8 @@ class _WaterStationPageState extends State<WaterStationPage> {
       gradient = LinearGradient(colors: [Colors.lightBlue, Colors.blue]);
     }
 
+    double price = _getContainerPrice(label);
+
     return InkWell(
       onTap: () => setState(() => _selectedContainer = label),
       child: Container(
@@ -212,16 +240,13 @@ class _WaterStationPageState extends State<WaterStationPage> {
             Text(
               '$label Container',
               style: TextStyle(
-                color:
-                    isSelected
-                        ? Colors.white
-                        : Colors.black, // <-- Changed here
+                color: isSelected ? Colors.white : Colors.black,
                 fontWeight: FontWeight.w600,
               ),
             ),
             SizedBox(height: 4),
             Text(
-              '₱${_getContainerPrice(label).toStringAsFixed(2)}',
+              '₱${price.toStringAsFixed(2)}',
               style: TextStyle(
                 color: isSelected ? Colors.white : Colors.grey,
                 fontWeight: FontWeight.bold,
