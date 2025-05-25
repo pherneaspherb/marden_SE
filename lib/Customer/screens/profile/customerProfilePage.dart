@@ -57,7 +57,6 @@ class CustomerProfilePage extends StatelessWidget {
               '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
                   .trim();
           final phoneNumber = userData['phoneNumber'] ?? 'No Phone';
-          final address = userData['address'] ?? 'No Address';
 
           return ListView(
             padding: EdgeInsets.all(16),
@@ -81,7 +80,6 @@ class CustomerProfilePage extends StatelessWidget {
                     children: [
                       SizedBox(height: 4),
                       Text(phoneNumber),
-                      Text(address),
                     ],
                   ),
                 ),
