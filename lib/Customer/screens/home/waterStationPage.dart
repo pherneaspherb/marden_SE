@@ -22,10 +22,11 @@ class _WaterStationPageState extends State<WaterStationPage> {
   }
 
   Future<void> _fetchWaterPrices() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('services')
-        .doc('water')
-        .get();
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('services')
+            .doc('water')
+            .get();
 
     setState(() {
       _waterPrices = doc.data();
@@ -60,11 +61,13 @@ class _WaterStationPageState extends State<WaterStationPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => WaterPaymentPage(
-          selectedContainer: _selectedContainer,
-          quantity: _quantity,
-          deliveryMode: _deliveryMode,
-        ),
+        builder:
+            (context) => WaterPaymentPage(
+              selectedContainer: _selectedContainer,
+              quantity: _quantity,
+              deliveryMode: _deliveryMode,
+              totalPrice: totalPrice, // pass the computed total price here
+            ),
       ),
     );
   }
@@ -101,7 +104,10 @@ class _WaterStationPageState extends State<WaterStationPage> {
           padding: const EdgeInsets.all(20),
           child: ListView(
             children: [
-              Text('Select a container', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Select a container',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -139,7 +145,10 @@ class _WaterStationPageState extends State<WaterStationPage> {
                 ],
               ),
               SizedBox(height: 24),
-              Text('Mode of Delivery', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Mode of Delivery',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               RadioListTile(
                 title: Text('Pick Up'),
                 value: 'Pick Up',

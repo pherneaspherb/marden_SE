@@ -151,14 +151,34 @@ class TransactionDetailsPage extends StatelessWidget {
     return null;
   }
 
-  /// Builds laundry-specific details
+  /// Builds laundry-specific details with prices
   List<Widget> _buildLaundryDetails() {
     final List<Widget> widgets = [];
 
-    widgets.add(_buildDetailRow('Service', orderData['serviceType'] ?? 'Laundry'));
+    // Show services with prices
+    if (orderData['services'] != null && orderData['services'] is List) {
+      for (var service in orderData['services']) {
+        final name = service['name'] ?? 'Service';
+        final price = service['price'] ?? 0;
+        widgets.add(_buildServicePriceRow(name, price));
+      }
+    } else {
+      // fallback if no list, just show serviceType without price
+      widgets.add(_buildDetailRow('Service', orderData['serviceType'] ?? 'Laundry'));
+    }
 
+    // Show extras with prices if present
     if (orderData['extras'] != null && orderData['extras'] is List && (orderData['extras'] as List).isNotEmpty) {
-      widgets.add(_buildDetailRow('Extras', (orderData['extras'] as List).join(', ')));
+      for (var extra in orderData['extras']) {
+        if (extra is Map<String, dynamic>) {
+          final name = extra['name'] ?? 'Extra';
+          final price = extra['price'] ?? 0;
+          widgets.add(_buildServicePriceRow(name, price));
+        } else if (extra is String) {
+          // if extras is just a list of strings without price
+          widgets.add(_buildDetailRow('Extra', extra));
+        }
+      }
     }
 
     if (orderData['weight'] != null) {
@@ -172,14 +192,21 @@ class TransactionDetailsPage extends StatelessWidget {
     return widgets;
   }
 
-  /// Builds water-specific details
+  /// Builds water-specific details with prices
   List<Widget> _buildWaterDetails() {
     final List<Widget> widgets = [];
 
-    widgets.add(_buildDetailRow('Type', orderData['type'] ?? 'Water'));
-
-    if (orderData['quantity'] != null) {
-      widgets.add(_buildDetailRow('Quantity', '${orderData['quantity']} container(s)'));
+    // Show types with prices if available
+    if (orderData['items'] != null && orderData['items'] is List) {
+      for (var item in orderData['items']) {
+        final name = item['name'] ?? 'Water';
+        final price = item['price'] ?? 0;
+        final quantity = item['quantity'] ?? 1;
+        widgets.add(_buildServicePriceRow('$name x $quantity', price * quantity));
+      }
+    } else {
+      // fallback if no items list, just show type without price
+      widgets.add(_buildDetailRow('Type', orderData['type'] ?? 'Water'));
     }
 
     if (orderData['containerType'] != null) {
@@ -193,7 +220,7 @@ class TransactionDetailsPage extends StatelessWidget {
     return widgets;
   }
 
-  /// Helper method to build label-value row
+  /// Helper method to build label-value row (for non-price fields)
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -213,6 +240,26 @@ class TransactionDetailsPage extends StatelessWidget {
               textAlign: TextAlign.right,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Helper method to build service/extra + price row
+  Widget _buildServicePriceRow(String service, num price) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            service,
+            style: const TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.w500),
+          ),
+          Text(
+            '₱${price.toStringAsFixed(2)}',
+            style: const TextStyle(fontSize: 16, color: Colors.black54),
           ),
         ],
       ),

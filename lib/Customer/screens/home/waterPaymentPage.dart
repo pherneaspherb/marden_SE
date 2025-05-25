@@ -7,12 +7,14 @@ class WaterPaymentPage extends StatefulWidget {
   final String selectedContainer;
   final String deliveryMode;
   final int quantity;
+  final double totalPrice; // new parameter
 
   const WaterPaymentPage({
     Key? key,
     required this.selectedContainer,
     required this.deliveryMode,
     required this.quantity,
+    required this.totalPrice, // required
   }) : super(key: key);
 
   @override
@@ -30,17 +32,6 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
 
   bool _isPlacingOrder = false;
   bool saveAsDefault = false;
-
-  double get _computedTotalPrice {
-    const double containerPrice = 25.0;
-    const double deliveryFee = 15.0;
-
-    double total = widget.quantity * containerPrice;
-    if (widget.deliveryMode == 'Deliver') {
-      total += deliveryFee;
-    }
-    return total;
-  }
 
   Future<void> _placeOrder() async {
     FocusScope.of(context).unfocus();
@@ -68,15 +59,14 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
       ) async {
         final snapshot = await transaction.get(countersRef);
 
-        int current = 0;
-        if (snapshot.exists) {
-          current = snapshot.get('lastOrderNumber') ?? 0;
+        if (!snapshot.exists) {
+          throw Exception('Counter document does not exist!');
         }
 
+        int current = snapshot.get('lastOrderNumber') ?? 0;
         int updated = current + 1;
-        transaction.set(countersRef, {
-          'lastOrderNumber': updated,
-        }, SetOptions(merge: true));
+
+        transaction.update(countersRef, {'lastOrderNumber': updated});
 
         return updated;
       });
@@ -90,7 +80,7 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
         'type': 'Water',
         'containerType': widget.selectedContainer,
         'quantity': widget.quantity,
-        'totalPrice': _computedTotalPrice,
+        'totalPrice': widget.totalPrice,
         'deliveryMode': widget.deliveryMode,
         'address': {
           'house': streetController.text.trim(),
@@ -359,7 +349,7 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
                       ),
                     ),
                     Text(
-                      '₱ ${_computedTotalPrice.toStringAsFixed(2)}',
+                      '₱ ${widget.totalPrice.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
