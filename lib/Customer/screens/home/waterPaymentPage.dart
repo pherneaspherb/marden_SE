@@ -7,14 +7,14 @@ class WaterPaymentPage extends StatefulWidget {
   final String selectedContainer;
   final String deliveryMode;
   final int quantity;
-  final double totalPrice; // new parameter
+  final double totalPrice;
 
   const WaterPaymentPage({
     Key? key,
     required this.selectedContainer,
     required this.deliveryMode,
     required this.quantity,
-    required this.totalPrice, // required
+    required this.totalPrice,
   }) : super(key: key);
 
   @override
@@ -53,7 +53,6 @@ class _WaterPaymentPageState extends State<WaterPaymentPage> {
           .collection('counters')
           .doc('waterOrders');
 
-      // Transaction to get and increment the last order number
       int newOrderNumber = await FirebaseFirestore.instance.runTransaction((
         transaction,
       ) async {

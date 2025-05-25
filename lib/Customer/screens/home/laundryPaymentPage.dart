@@ -138,7 +138,6 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
           .collection('counters')
           .doc('laundryOrders');
 
-      // Run transaction to safely increment order counter and get next number
       final newOrderId = await FirebaseFirestore.instance.runTransaction((
         tx,
       ) async {
@@ -146,10 +145,9 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
         int lastNumber = counterSnap.data()?['lastOrderNumber'] ?? 0;
         int nextOrderNumber = lastNumber + 1;
 
-        // Update the counter
         tx.update(counterRef, {'lastOrderNumber': nextOrderNumber});
 
-        // Format: ORD-2025-0001
+        // ORD-2025-0001
         final year = DateTime.now().year;
         return 'ORD-$year-${nextOrderNumber.toString().padLeft(4, '0')}';
       });

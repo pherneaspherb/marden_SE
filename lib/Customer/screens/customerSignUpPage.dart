@@ -31,7 +31,9 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
 
       try {
         final email = _emailController.text.trim();
-        final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+        final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(
+          email,
+        );
 
         if (methods.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -63,9 +65,9 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
               'createdAt': Timestamp.now(),
             });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign up successful')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Sign up successful')));
 
         Navigator.pushAndRemoveUntil(
           context,
@@ -85,9 +87,9 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
           }
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
       } finally {
         setState(() => _isLoading = false);
       }
@@ -131,27 +133,43 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
                     _buildTextField(_firstNameController, 'First Name'),
                     _buildTextField(_lastNameController, 'Last Name'),
                     _buildTextField(_emailController, 'Email'),
-                    _buildTextField(_phoneNumberController, 'Phone Number', isNumber: true),
-                    _buildTextField(_passwordController, 'Password', isPassword: true),
-                    _buildTextField(_confirmPasswordController, 'Confirm Password', isPassword: true),
+                    _buildTextField(
+                      _phoneNumberController,
+                      'Phone Number',
+                      isNumber: true,
+                    ),
+                    _buildTextField(
+                      _passwordController,
+                      'Password',
+                      isPassword: true,
+                    ),
+                    _buildTextField(
+                      _confirmPasswordController,
+                      'Confirm Password',
+                      isPassword: true,
+                    ),
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _signUp,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 15,
+                        ),
                       ),
-                      child: _isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text('Sign Up'),
+                      child:
+                          _isLoading
+                              ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text('Sign Up'),
                     ),
                   ],
                 ),
@@ -169,7 +187,8 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
     bool isPassword = false,
     bool isNumber = false,
   }) {
-    bool isObscure = isPassword &&
+    bool isObscure =
+        isPassword &&
         ((label == 'Password' && !_isPasswordVisible) ||
             (label == 'Confirm Password' && !_isConfirmPasswordVisible));
 
@@ -177,41 +196,42 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        keyboardType: isNumber
-            ? TextInputType.phone
-            : (label == 'Email'
-                ? TextInputType.emailAddress
-                : TextInputType.text),
+        keyboardType:
+            isNumber
+                ? TextInputType.phone
+                : (label == 'Email'
+                    ? TextInputType.emailAddress
+                    : TextInputType.text),
         obscureText: isObscure,
         maxLength: isNumber ? 11 : null,
-        inputFormatters: isNumber
-            ? [FilteringTextInputFormatter.digitsOnly]
-            : null,
+        inputFormatters:
+            isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(),
           counterText: "",
-          suffixIcon: isPassword
-              ? IconButton(
-                  icon: Icon(
-                    (label == 'Password' && _isPasswordVisible) ||
-                            (label == 'Confirm Password' &&
-                                _isConfirmPasswordVisible)
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      if (label == 'Password') {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      } else if (label == 'Confirm Password') {
-                        _isConfirmPasswordVisible =
-                            !_isConfirmPasswordVisible;
-                      }
-                    });
-                  },
-                )
-              : null,
+          suffixIcon:
+              isPassword
+                  ? IconButton(
+                    icon: Icon(
+                      (label == 'Password' && _isPasswordVisible) ||
+                              (label == 'Confirm Password' &&
+                                  _isConfirmPasswordVisible)
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        if (label == 'Password') {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        } else if (label == 'Confirm Password') {
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
+                        }
+                      });
+                    },
+                  )
+                  : null,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) return 'Please enter $label';

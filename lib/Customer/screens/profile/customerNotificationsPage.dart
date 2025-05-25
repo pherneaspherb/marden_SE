@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class CustomerNotificationsPage extends StatefulWidget {
   @override
-  _CustomerNotificationsPageState createState() => _CustomerNotificationsPageState();
+  _CustomerNotificationsPageState createState() =>
+      _CustomerNotificationsPageState();
 }
 
 class _CustomerNotificationsPageState extends State<CustomerNotificationsPage> {
@@ -14,9 +15,7 @@ class _CustomerNotificationsPageState extends State<CustomerNotificationsPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF4B007D),
-        iconTheme: IconThemeData(
-          color: Colors.white,
-        ), // sets back arrow color to white
+        iconTheme: IconThemeData(color: Colors.white),
         title: Text(
           'Notifications',
           style: TextStyle(

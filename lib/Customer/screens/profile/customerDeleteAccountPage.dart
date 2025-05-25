@@ -18,13 +18,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
       final uid = user?.uid;
 
       if (user != null && uid != null) {
-        // 1. Delete user data from Firestore
-        await FirebaseFirestore.instance.collection('customers').doc(uid).delete();
-
-        // 2. Delete user authentication account
+        await FirebaseFirestore.instance
+            .collection('customers')
+            .doc(uid)
+            .delete();
         await user.delete();
-
-        // 3. Navigate back to login or first page
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Account deleted successfully.')),
         );
@@ -33,7 +31,9 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please log in again before deleting your account.')),
+          SnackBar(
+            content: Text('Please log in again before deleting your account.'),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -48,23 +48,26 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   void _confirmDelete() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Confirm Delete'),
-        content: Text('Are you sure you want to permanently delete your account?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('Confirm Delete'),
+            content: Text(
+              'Are you sure you want to permanently delete your account?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _deleteAccount();
+                },
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _deleteAccount();
-            },
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -73,9 +76,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF4B007D),
-        iconTheme: IconThemeData(
-          color: Colors.white,
-        ), // sets back arrow color to white
+        iconTheme: IconThemeData(color: Colors.white),
         title: Text(
           'Delete Account',
           style: TextStyle(
@@ -87,32 +88,36 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         ),
       ),
       body: Center(
-        child: _isDeleting
-            ? CircularProgressIndicator()
-            : Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.delete_forever, size: 100, color: Colors.red),
-                    SizedBox(height: 24),
-                    Text(
-                      'This action is irreversible.\nYour account and all data will be permanently deleted.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: _confirmDelete,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+        child:
+            _isDeleting
+                ? CircularProgressIndicator()
+                : Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.delete_forever, size: 100, color: Colors.red),
+                      SizedBox(height: 24),
+                      Text(
+                        'This action is irreversible.\nYour account and all data will be permanently deleted.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16),
                       ),
-                      child: Text('Delete My Account'),
-                    ),
-                  ],
+                      SizedBox(height: 32),
+                      ElevatedButton(
+                        onPressed: _confirmDelete,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 40,
+                            vertical: 16,
+                          ),
+                        ),
+                        child: Text('Delete My Account'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
       ),
     );
   }

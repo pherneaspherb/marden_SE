@@ -8,14 +8,14 @@ import 'receiptPage.dart';
 class TransactionsPage extends StatefulWidget {
   @override
   _TransactionsPageState createState() => _TransactionsPageState();
-  int _selectedTab = 0; // e.g., 0 = Transaction A, 1 = Transaction B
+  int _selectedTab = 0; 
 }
 
 class _TransactionsPageState extends State<TransactionsPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Color _primaryColor = const Color(0xFF4B007D);
   final Color _secondaryTextColor = Colors.black54;
-  int _selectedTab = 0; // 0 for Laundry, 1 for Water
+  int _selectedTab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -44,8 +44,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
           children: [
             const SizedBox(
               height: 20,
-            ), // <- this adds space between AppBar and tab buttons
-            // Tab Bar
+            ), 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40.0),
 

@@ -14,12 +14,14 @@ class ReceiptPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timestamp = orderData['createdAt'] != null
-        ? (orderData['createdAt'] as Timestamp).toDate()
-        : null;
-    final totalAmount = isLaundryOrder
-        ? orderData['totalAmount'] ?? 0.0
-        : orderData['totalPrice'] ?? 0.0;
+    final timestamp =
+        orderData['createdAt'] != null
+            ? (orderData['createdAt'] as Timestamp).toDate()
+            : null;
+    final totalAmount =
+        isLaundryOrder
+            ? orderData['totalAmount'] ?? 0.0
+            : orderData['totalPrice'] ?? 0.0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -37,7 +39,6 @@ class ReceiptPage extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
-              // Total Paid
               const Text(
                 'TOTAL PAID:',
                 style: TextStyle(fontSize: 14, color: Colors.black54),
@@ -52,15 +53,11 @@ class ReceiptPage extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
-              // Breakdown
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Breakdown',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 15),
@@ -77,9 +74,10 @@ class ReceiptPage extends StatelessWidget {
                 ),
                 _buildBreakdownItem(
                   title: 'Weight',
-                  value: orderData['weight'] != null
-                      ? '${orderData['weight']}kg'
-                      : 'N/A',
+                  value:
+                      orderData['weight'] != null
+                          ? '${orderData['weight']}kg'
+                          : 'N/A',
                 ),
               ] else ...[
                 _buildBreakdownItem(
@@ -108,15 +106,11 @@ class ReceiptPage extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
-              // Order Details
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Order Details',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 10),
@@ -125,18 +119,11 @@ class ReceiptPage extends StatelessWidget {
                 timestamp != null
                     ? DateFormat('dd MMM yyyy  hh:mm a').format(timestamp)
                     : 'No date',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
+                style: const TextStyle(fontSize: 16, color: Colors.black54),
               ),
               const SizedBox(height: 40),
-
-              // Download Receipt Button
               ElevatedButton(
-                onPressed: () {
-                  // Implement download functionality
-                },
+                onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4B007D),
                   padding: const EdgeInsets.symmetric(
@@ -172,9 +159,10 @@ class ReceiptPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
-        crossAxisAlignment: subValue != null
-            ? CrossAxisAlignment.start
-            : CrossAxisAlignment.center,
+        crossAxisAlignment:
+            subValue != null
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: 80,

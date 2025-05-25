@@ -7,9 +7,9 @@ class CustomerPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center( // Center everything
+      body: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32), // Add side padding for better layout
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -26,10 +26,14 @@ class CustomerPage extends StatelessWidget {
               SizedBox(height: 40),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => CustomerSignUpPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => CustomerSignUpPage()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple, foregroundColor: Colors.white,
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -40,10 +44,14 @@ class CustomerPage extends StatelessWidget {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => CustomerLoginPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => CustomerLoginPage()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple, foregroundColor: Colors.white,
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 50, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),

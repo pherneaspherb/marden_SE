@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AddCustomerAddressPage extends StatefulWidget {
-  final Map<String, dynamic>? existingAddress; // optional parameter
+  final Map<String, dynamic>? existingAddress;
 
   AddCustomerAddressPage({Key? key, this.existingAddress}) : super(key: key);
 
@@ -14,7 +14,6 @@ class AddCustomerAddressPage extends StatefulWidget {
 class _AddCustomerAddressPageState extends State<AddCustomerAddressPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers for address fields
   final _streetController = TextEditingController();
   final _barangayController = TextEditingController();
   final _municipalityController = TextEditingController();
@@ -29,7 +28,6 @@ class _AddCustomerAddressPageState extends State<AddCustomerAddressPage> {
   void initState() {
     super.initState();
 
-    // Prefill fields if editing an existing address
     if (widget.existingAddress != null) {
       final address = widget.existingAddress!;
       _streetController.text = address['street'] ?? '';
@@ -65,32 +63,31 @@ class _AddCustomerAddressPageState extends State<AddCustomerAddressPage> {
 
     try {
       final userId = FirebaseAuth.instance.currentUser!.uid;
-      final userRef = FirebaseFirestore.instance.collection('customers').doc(userId);
+      final userRef = FirebaseFirestore.instance
+          .collection('customers')
+          .doc(userId);
 
-      if (widget.existingAddress != null && widget.existingAddress!['id'] != null) {
-        // Update existing address document
+      if (widget.existingAddress != null &&
+          widget.existingAddress!['id'] != null) {
         await userRef
             .collection('addresses')
             .doc(widget.existingAddress!['id'])
             .set(addressData, SetOptions(merge: true));
       } else {
-        // Add new address to the addresses subcollection
         await userRef.collection('addresses').add(addressData);
       }
 
-      // If this is the default address, update main customer doc
       if (_isDefault) {
         await userRef.set({
           'defaultAddress': addressData,
         }, SetOptions(merge: true));
       }
 
-      // Return to previous screen with address data
       Navigator.pop(context, addressData);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving address: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving address: $e')));
     }
   }
 
@@ -122,7 +119,6 @@ class _AddCustomerAddressPageState extends State<AddCustomerAddressPage> {
               _buildTextField(_municipalityController, "Municipality"),
               _buildTextField(_cityController, "City"),
 
-              // Checkbox for default address
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -163,7 +159,9 @@ class _AddCustomerAddressPageState extends State<AddCustomerAddressPage> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: Text(
-                    widget.existingAddress == null ? 'Save Address' : 'Update Address',
+                    widget.existingAddress == null
+                        ? 'Save Address'
+                        : 'Update Address',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -175,7 +173,6 @@ class _AddCustomerAddressPageState extends State<AddCustomerAddressPage> {
     );
   }
 
-  // Helper to build text fields with validation
   Widget _buildTextField(
     TextEditingController controller,
     String label, {
@@ -190,13 +187,15 @@ class _AddCustomerAddressPageState extends State<AddCustomerAddressPage> {
           labelText: label,
           border: OutlineInputBorder(),
         ),
-        validator: (value) =>
-            (value == null || value.trim().isEmpty) ? 'This field is required' : null,
+        validator:
+            (value) =>
+                (value == null || value.trim().isEmpty)
+                    ? 'This field is required'
+                    : null,
       ),
     );
   }
 
-  // Section title helper
   Widget _sectionTitle(String text) {
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),

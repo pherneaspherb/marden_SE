@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'customerAccountSettingsPage.dart';
-import 'customerNotificationsPage.dart'; // <-- you'll create this
+import 'customerNotificationsPage.dart';
 import '../customerLoginPage.dart';
 import 'customerAddressBookPage.dart';
 
@@ -18,9 +18,7 @@ class CustomerProfilePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF4B007D),
-        iconTheme: IconThemeData(
-          color: Colors.white,
-        ), // sets back arrow color to white
+        iconTheme: IconThemeData(color: Colors.white),
         title: Text(
           'Profile',
           style: TextStyle(
@@ -77,10 +75,7 @@ class CustomerProfilePage extends StatelessWidget {
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 4),
-                      Text(phoneNumber),
-                    ],
+                    children: [SizedBox(height: 4), Text(phoneNumber)],
                   ),
                 ),
               ),

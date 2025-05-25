@@ -88,7 +88,6 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Purple Header
             Container(
               decoration: const BoxDecoration(
                 color: _purpleColor,
@@ -213,7 +212,6 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
     );
     final weight = widget.orderData['weight'];
 
-    // Main service
     if (servicePrices.containsKey(selectedService)) {
       final price = servicePrices[selectedService];
       if (price != null) {
@@ -223,7 +221,6 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
       }
     }
 
-    // Extras
     for (final extra in selectedExtras) {
       if (extra != selectedService && servicePrices.containsKey(extra)) {
         final price = servicePrices[extra];
@@ -233,7 +230,6 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
       }
     }
 
-    // Per kg
     final perKgPrice = servicePrices['per_kilogram'] ?? 0;
     if (weight != null && weight is num && weight > 0 && perKgPrice != null) {
       final totalWeightPrice = weight * perKgPrice;
@@ -242,7 +238,6 @@ class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
       );
     }
 
-    // Delivery fee
     if (deliveryMode == 'pickup' && servicePrices.containsKey('pickup')) {
       widgets.add(_buildServicePriceRow('Pickup', servicePrices['pickup']!));
     } else if (deliveryMode == 'deliver' &&

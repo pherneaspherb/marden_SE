@@ -77,11 +77,8 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
       extras += (laundryPrices['fabric_softener'] ?? 0).toDouble();
     if (foldClothes) extras += (laundryPrices['fold'] ?? 0).toDouble();
 
-    // Apply flat 600 peso rate for 1–7 kg
-    double weightCharge = 0.0;
-    if (weight > 0 && weight <= 7) {
-      weightCharge = 600.0;
-    }
+    double perKiloRate = (laundryPrices['per_kilogram'] ?? 0).toDouble();
+    double weightCharge = weight * perKiloRate;
 
     double delivery =
         (deliveryMode == 'Deliver')
@@ -105,7 +102,6 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
       gradient = LinearGradient(colors: [Colors.orange, Colors.deepOrange]);
     }
 
-    // Map service label to Firestore key
     final priceKey =
         {
           'Wash & Dry': 'wash_and_dry',

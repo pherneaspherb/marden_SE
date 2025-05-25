@@ -66,7 +66,7 @@ class _WaterStationPageState extends State<WaterStationPage> {
               selectedContainer: _selectedContainer,
               quantity: _quantity,
               deliveryMode: _deliveryMode,
-              totalPrice: totalPrice, // pass the computed total price here
+              totalPrice: totalPrice,
             ),
       ),
     );

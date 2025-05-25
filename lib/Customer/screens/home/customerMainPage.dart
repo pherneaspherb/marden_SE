@@ -40,10 +40,11 @@ class _CustomerMainPageState extends State<CustomerMainPage> {
     }
 
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('customers') // 👈 ensure this matches your actual collection
-          .doc(uid)
-          .get();
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('customers')
+              .doc(uid)
+              .get();
 
       print("📄 Document exists? ${doc.exists}");
 
@@ -66,16 +67,14 @@ class _CustomerMainPageState extends State<CustomerMainPage> {
 
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index; 
+      _selectedIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (!_hasUserData) {

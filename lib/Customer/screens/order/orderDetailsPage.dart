@@ -17,9 +17,10 @@ class OrderDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    final normalizedOrderType = orderType.toLowerCase().contains('laundry')
-        ? 'laundry'
-        : orderType.toLowerCase().contains('water')
+    final normalizedOrderType =
+        orderType.toLowerCase().contains('laundry')
+            ? 'laundry'
+            : orderType.toLowerCase().contains('water')
             ? 'waterOrders'
             : orderType.toLowerCase();
 
@@ -28,12 +29,14 @@ class OrderDetailsPage extends StatelessWidget {
     final customerNameFallback =
         (firstNameFallback + ' ' + lastNameFallback).trim();
 
-    final status = orderData['status']?.toString().toLowerCase() ?? 'processing';
+    final status =
+        orderData['status']?.toString().toLowerCase() ?? 'processing';
 
     final extrasList = (orderData['extras'] as List<dynamic>?);
-    final availedExtras = extrasList != null
-        ? extrasList.where((e) => e.toString().trim().isNotEmpty).toList()
-        : <dynamic>[];
+    final availedExtras =
+        extrasList != null
+            ? extrasList.where((e) => e.toString().trim().isNotEmpty).toList()
+            : <dynamic>[];
 
     final containerType = orderData['containerType']?.toString() ?? '';
 
@@ -48,7 +51,6 @@ class OrderDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Header
             Container(
               decoration: BoxDecoration(
                 color: Color(0xFF4B007D),
@@ -87,13 +89,13 @@ class OrderDetailsPage extends StatelessWidget {
                 children: [
                   SizedBox(height: 30),
 
-                  // Breakdown Section
                   Text('Breakdown', style: sectionTitleStyle),
                   Divider(thickness: 1),
                   SizedBox(height: 8),
 
                   if (normalizedOrderType == 'laundry') ...[
-                    if ((orderData['serviceType']?.toString().isNotEmpty ?? false))
+                    if ((orderData['serviceType']?.toString().isNotEmpty ??
+                        false))
                       _buildDetailRow(
                         'Service',
                         orderData['serviceType'].toString(),
@@ -105,27 +107,29 @@ class OrderDetailsPage extends StatelessWidget {
                     if ((orderData['weight'] ?? 0) > 0)
                       _buildDetailRow('Weight', '${orderData['weight']}kg'),
 
-                    // Only show services that were actually selected
-                    if (orderData['selectedServices'] != null && 
-                        orderData['selectedServices'] is List && 
+                    if (orderData['selectedServices'] != null &&
+                        orderData['selectedServices'] is List &&
                         (orderData['selectedServices'] as List).isNotEmpty)
                       ...(orderData['selectedServices'] as List<dynamic>)
-                          .where((service) => 
-                              service is String && 
-                              service.trim().isNotEmpty)
-                          .map<Widget>(
-                            (service) {
-                              final price = orderData['laundryServices'] != null && 
-                                  orderData['laundryServices'] is Map && 
-                                  (orderData['laundryServices'] as Map).containsKey(service)
-                                    ? (orderData['laundryServices'] as Map)[service] ?? 0
+                          .where(
+                            (service) =>
+                                service is String && service.trim().isNotEmpty,
+                          )
+                          .map<Widget>((service) {
+                            final price =
+                                orderData['laundryServices'] != null &&
+                                        orderData['laundryServices'] is Map &&
+                                        (orderData['laundryServices'] as Map)
+                                            .containsKey(service)
+                                    ? (orderData['laundryServices']
+                                            as Map)[service] ??
+                                        0
                                     : 0;
-                              return _buildDetailRow(
-                                service,
-                                '₱${NumberFormat('#,##0.00').format(price)}',
-                              );
-                            },
-                          ),
+                            return _buildDetailRow(
+                              service,
+                              '₱${NumberFormat('#,##0.00').format(price)}',
+                            );
+                          }),
                   ],
 
                   if (normalizedOrderType == 'waterOrders') ...[
@@ -151,7 +155,8 @@ class OrderDetailsPage extends StatelessWidget {
                       orderData['instructions'].toString(),
                     ),
 
-                  if (orderData['paymentMethod']?.toString().isNotEmpty ?? false)
+                  if (orderData['paymentMethod']?.toString().isNotEmpty ??
+                      false)
                     _buildDetailRow(
                       'Payment Method',
                       orderData['paymentMethod'].toString(),
@@ -159,18 +164,18 @@ class OrderDetailsPage extends StatelessWidget {
 
                   SizedBox(height: 24),
 
-                  // Details Section
                   Text('Details', style: sectionTitleStyle),
                   Divider(thickness: 1),
                   SizedBox(height: 8),
 
                   FutureBuilder<DocumentSnapshot>(
-                    future: uid == null
-                        ? Future.value(null)
-                        : FirebaseFirestore.instance
-                            .collection('customers')
-                            .doc(uid)
-                            .get(),
+                    future:
+                        uid == null
+                            ? Future.value(null)
+                            : FirebaseFirestore.instance
+                                .collection('customers')
+                                .doc(uid)
+                                .get(),
                     builder: (context, snapshot) {
                       final customerName =
                           snapshot.hasData && snapshot.data!.exists
@@ -193,12 +198,13 @@ class OrderDetailsPage extends StatelessWidget {
                   ),
 
                   FutureBuilder<DocumentSnapshot>(
-                    future: uid == null
-                        ? Future.value(null)
-                        : FirebaseFirestore.instance
-                            .collection('customers')
-                            .doc(uid)
-                            .get(),
+                    future:
+                        uid == null
+                            ? Future.value(null)
+                            : FirebaseFirestore.instance
+                                .collection('customers')
+                                .doc(uid)
+                                .get(),
                     builder: (context, snapshot) {
                       return _buildDetailRow(
                         'Address',
@@ -211,10 +217,8 @@ class OrderDetailsPage extends StatelessWidget {
                       );
                     },
                   ),
-
                   SizedBox(height: 24),
-
-                  // Total Amount
+                  
                   Container(
                     padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
@@ -305,13 +309,14 @@ class OrderDetailsPage extends StatelessWidget {
     }
 
     if (addressMap != null) {
-      final components = [
-        addressMap['street'],
-        addressMap['house'],
-        addressMap['barangay'],
-        addressMap['municipality'],
-        addressMap['city'],
-      ].where((c) => c != null && c.toString().isNotEmpty).toList();
+      final components =
+          [
+            addressMap['street'],
+            addressMap['house'],
+            addressMap['barangay'],
+            addressMap['municipality'],
+            addressMap['city'],
+          ].where((c) => c != null && c.toString().isNotEmpty).toList();
       return components.join(', ');
     }
 

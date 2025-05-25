@@ -34,7 +34,6 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
         print("✅ Login successful: ${user?.uid}");
 
         if (user != null) {
-          // 🔍 Check if user exists in Firestore under `customers`
           final doc =
               await FirebaseFirestore.instance
                   .collection('customers')
@@ -42,7 +41,6 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                   .get();
 
           if (doc.exists) {
-            // ✅ User data found — proceed to main page
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text('Login successful')));
@@ -53,7 +51,6 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
               (route) => false,
             );
           } else {
-            // ❌ No user data found in Firestore
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(

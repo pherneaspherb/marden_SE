@@ -9,7 +9,7 @@ class CustomerOrdersPage extends StatefulWidget {
 }
 
 class _CustomerOrdersPageState extends State<CustomerOrdersPage> {
-  int _selectedTab = 0; // 0 = Laundry, 1 = Water
+  int _selectedTab = 0; 
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class _CustomerOrdersPageState extends State<CustomerOrdersPage> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.only(top: 16), // Top spacing from AppBar
+        padding: const EdgeInsets.only(top: 16), 
         child: Column(
           children: [
             _buildTabButtons(),
@@ -60,7 +60,7 @@ class _CustomerOrdersPageState extends State<CustomerOrdersPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: 40.0,
-      ), // Matches TransactionsPage
+      ),
       child: Row(
         children: [
           _tabButton('Laundry', 0),

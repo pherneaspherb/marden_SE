@@ -31,7 +31,7 @@ class _CustomerAddressBookPageState extends State<CustomerAddressBookPage> {
           snapshot.docs.map((doc) {
             final data = doc.data();
             return {
-              'id': doc.id, // Add doc ID to identify the document
+              'id': doc.id,
               'street': data['street'] ?? '',
               'barangay': data['barangay'] ?? '',
               'municipality': data['municipality'] ?? '',
@@ -165,7 +165,6 @@ class _CustomerAddressBookPageState extends State<CustomerAddressBookPage> {
                                 if (address['isDefault'] == true)
                                   OutlinedButton(
                                     onPressed: () {
-                                      // Optional logic for default address
                                     },
                                     child: Text('Default Address'),
                                     style: OutlinedButton.styleFrom(
