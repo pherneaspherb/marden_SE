@@ -1,11 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class TransactionDetailsPage extends StatelessWidget {
+class TransactionDetailsPage extends StatefulWidget {
   final Map<String, dynamic> orderData;
   final String orderType;
-
-  static const _purpleColor = Color(0xFF4B007D);
 
   const TransactionDetailsPage({
     super.key,
@@ -14,18 +13,69 @@ class TransactionDetailsPage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Parse timestamp (supporting Firestore Timestamp or DateTime)
-    final timestampRaw = orderData['createdAt'] ?? orderData['timestamp'];
-    final DateTime? dateTime = _parseTimestamp(timestampRaw);
-    final formattedDate = dateTime != null
-        ? DateFormat('dd MMM yyyy  hh:mm a').format(dateTime)
-        : 'N/A';
+  State<TransactionDetailsPage> createState() => _TransactionDetailsPageState();
+}
 
-    // Total amount differs by order type
-    final totalAmount = (orderType.toLowerCase() == 'laundry')
-        ? (orderData['totalAmount'] ?? 0)
-        : (orderData['totalPrice'] ?? 0);
+class _TransactionDetailsPageState extends State<TransactionDetailsPage> {
+  static const _purpleColor = Color(0xFF4B007D);
+  Map<String, dynamic> servicePrices = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchServicePrices();
+  }
+
+  Future<void> _fetchServicePrices() async {
+    try {
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('services')
+              .doc(widget.orderType.toLowerCase())
+              .get();
+
+      if (doc.exists) {
+        setState(() {
+          servicePrices = doc.data() ?? {};
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          servicePrices = {};
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching service prices: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return _buildTransactionUI();
+  }
+
+  Widget _buildTransactionUI() {
+    final timestampRaw =
+        widget.orderData['createdAt'] ?? widget.orderData['timestamp'];
+    final DateTime? dateTime = _parseTimestamp(timestampRaw);
+    final formattedDate =
+        dateTime != null
+            ? DateFormat('dd MMM yyyy  hh:mm a').format(dateTime)
+            : 'N/A';
+
+    final totalAmount =
+        (widget.orderType.toLowerCase() == 'laundry')
+            ? (widget.orderData['totalAmount'] ?? 0)
+            : (widget.orderData['totalPrice'] ?? 0);
 
     const sectionTitleStyle = TextStyle(
       fontSize: 18,
@@ -65,7 +115,7 @@ class TransactionDetailsPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 48), // To balance IconButton width
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
@@ -75,18 +125,16 @@ class TransactionDetailsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Breakdown Section
                   const Text('Breakdown', style: sectionTitleStyle),
                   const Divider(thickness: 1),
                   const SizedBox(height: 8),
 
-                  // Conditional details based on order type
-                  if (orderType.toLowerCase() == 'laundry') ..._buildLaundryDetails(),
-                  if (orderType.toLowerCase() == 'water') ..._buildWaterDetails(),
+                  if (widget.orderType.toLowerCase() == 'laundry')
+                    ..._buildLaundryDetails(),
+                  if (widget.orderType.toLowerCase() == 'water')
+                    ..._buildWaterDetails(),
 
                   const SizedBox(height: 24),
-
-                  // Order Details Section
                   const Text('Order Details', style: sectionTitleStyle),
                   const Divider(thickness: 1),
                   const SizedBox(height: 8),
@@ -97,10 +145,11 @@ class TransactionDetailsPage extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 24),
-
-                  // Total Paid Container
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(12),
@@ -137,12 +186,10 @@ class TransactionDetailsPage extends StatelessWidget {
     );
   }
 
-  /// Helper to parse Firestore Timestamp or DateTime
   DateTime? _parseTimestamp(dynamic timestamp) {
     if (timestamp == null) return null;
     if (timestamp is DateTime) return timestamp;
     try {
-      // Firestore Timestamp has toDate()
       final toDateMethod = timestamp.toDate;
       if (toDateMethod is Function) {
         return timestamp.toDate();
@@ -151,102 +198,137 @@ class TransactionDetailsPage extends StatelessWidget {
     return null;
   }
 
-  /// Builds laundry-specific details with prices
   List<Widget> _buildLaundryDetails() {
-    final List<Widget> widgets = [];
+    final widgets = <Widget>[];
 
-    // Show services with prices
-    if (orderData['services'] != null && orderData['services'] is List) {
-      for (var service in orderData['services']) {
-        final name = service['name'] ?? 'Service';
-        final price = service['price'] ?? 0;
-        widgets.add(_buildServicePriceRow(name, price));
+    final selectedService = _toSnakeCase(
+      widget.orderData['serviceType']?.toString() ?? '',
+    );
+    final selectedExtras =
+        (widget.orderData['extras'] as List<dynamic>? ?? [])
+            .map((e) => _toSnakeCase(e.toString()))
+            .toList();
+    final deliveryMode = _toSnakeCase(
+      widget.orderData['deliveryMode']?.toString() ?? '',
+    );
+    final weight = widget.orderData['weight'];
+
+    // Main service
+    if (servicePrices.containsKey(selectedService)) {
+      final price = servicePrices[selectedService];
+      if (price != null) {
+        widgets.add(
+          _buildServicePriceRow(_formatServiceLabel(selectedService), price),
+        );
       }
-    } else {
-      // fallback if no list, just show serviceType without price
-      widgets.add(_buildDetailRow('Service', orderData['serviceType'] ?? 'Laundry'));
     }
 
-    // Show extras with prices if present
-    if (orderData['extras'] != null && orderData['extras'] is List && (orderData['extras'] as List).isNotEmpty) {
-      for (var extra in orderData['extras']) {
-        if (extra is Map<String, dynamic>) {
-          final name = extra['name'] ?? 'Extra';
-          final price = extra['price'] ?? 0;
-          widgets.add(_buildServicePriceRow(name, price));
-        } else if (extra is String) {
-          // if extras is just a list of strings without price
-          widgets.add(_buildDetailRow('Extra', extra));
+    // Extras
+    for (final extra in selectedExtras) {
+      if (extra != selectedService && servicePrices.containsKey(extra)) {
+        final price = servicePrices[extra];
+        if (price != null) {
+          widgets.add(_buildServicePriceRow(_formatServiceLabel(extra), price));
         }
       }
     }
 
-    if (orderData['weight'] != null) {
-      widgets.add(_buildDetailRow('Weight', '${orderData['weight']} kg'));
+    // Per kg
+    final perKgPrice = servicePrices['per_kilogram'] ?? 0;
+    if (weight != null && weight is num && weight > 0 && perKgPrice != null) {
+      final totalWeightPrice = weight * perKgPrice;
+      widgets.add(
+        _buildServicePriceRow('Weight (${weight} kg)', totalWeightPrice),
+      );
     }
 
-    if (orderData['deliveryMode'] != null) {
-      widgets.add(_buildDetailRow('Delivery Mode', orderData['deliveryMode']));
+    // Delivery fee
+    if (deliveryMode == 'pickup' && servicePrices.containsKey('pickup')) {
+      widgets.add(_buildServicePriceRow('Pickup', servicePrices['pickup']!));
+    } else if (deliveryMode == 'deliver' &&
+        servicePrices.containsKey('deliver')) {
+      widgets.add(_buildServicePriceRow('Deliver', servicePrices['deliver']!));
     }
 
     return widgets;
   }
 
-  /// Builds water-specific details with prices
   List<Widget> _buildWaterDetails() {
-    final List<Widget> widgets = [];
+    final widgets = <Widget>[];
 
-    // Show types with prices if available
-    if (orderData['items'] != null && orderData['items'] is List) {
-      for (var item in orderData['items']) {
-        final name = item['name'] ?? 'Water';
-        final price = item['price'] ?? 0;
-        final quantity = item['quantity'] ?? 1;
-        widgets.add(_buildServicePriceRow('$name x $quantity', price * quantity));
-      }
+    final deliveryMode = _toSnakeCase(
+      widget.orderData['deliveryMode']?.toString() ?? '',
+    );
+
+    final containerRaw = widget.orderData['containerType']?.toString() ?? '';
+    String container;
+
+    switch (containerRaw.toLowerCase()) {
+      case 'jug':
+      case 'jug container':
+        container = 'jug_container';
+        break;
+      case 'tube':
+      case 'tube container':
+        container = 'tube_container';
+        break;
+      default:
+        container = _toSnakeCase(containerRaw);
+    }
+
+    final qtyRaw = widget.orderData['quantity'];
+    final qty =
+        (qtyRaw is num) ? qtyRaw : int.tryParse(qtyRaw?.toString() ?? '') ?? 0;
+
+    print('Water breakdown debug:');
+    print('  containerRaw: $containerRaw');
+    print('  container (snake_case): $container');
+    print('  quantity: $qty');
+    print('  servicePrices keys: ${servicePrices.keys.toList()}');
+
+    if (qty > 0 && servicePrices.containsKey(container)) {
+      final unitPriceRaw = servicePrices[container];
+      final unitPrice =
+          unitPriceRaw is num
+              ? unitPriceRaw.toDouble()
+              : double.tryParse(unitPriceRaw.toString()) ?? 0;
+
+      final total = unitPrice * qty;
+
+      widgets.add(
+        _buildServicePriceRow(
+          '${_formatServiceLabel(containerRaw)} x $qty',
+          total,
+        ),
+      );
     } else {
-      // fallback if no items list, just show type without price
-      widgets.add(_buildDetailRow('Type', orderData['type'] ?? 'Water'));
+      print(
+        'No container price or zero quantity; skipping container breakdown',
+      );
     }
 
-    if (orderData['containerType'] != null) {
-      widgets.add(_buildDetailRow('Container Type', orderData['containerType']));
-    }
+    if (deliveryMode == 'pickup' && servicePrices.containsKey('pickup')) {
+      final pickupRaw = servicePrices['pickup'];
+      final pickupPrice =
+          pickupRaw is num
+              ? pickupRaw.toDouble()
+              : double.tryParse(pickupRaw.toString()) ?? 0;
 
-    if (orderData['deliveryMode'] != null) {
-      widgets.add(_buildDetailRow('Delivery Mode', orderData['deliveryMode']));
+      widgets.add(_buildServicePriceRow('Pickup', pickupPrice));
+    } else if (deliveryMode == 'deliver' &&
+        servicePrices.containsKey('deliver')) {
+      final deliverRaw = servicePrices['deliver'];
+      final deliverPrice =
+          deliverRaw is num
+              ? deliverRaw.toDouble()
+              : double.tryParse(deliverRaw.toString()) ?? 0;
+
+      widgets.add(_buildServicePriceRow('Deliver', deliverPrice));
     }
 
     return widgets;
   }
 
-  /// Helper method to build label-value row (for non-price fields)
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Helper method to build service/extra + price row
   Widget _buildServicePriceRow(String service, num price) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -255,7 +337,11 @@ class TransactionDetailsPage extends StatelessWidget {
         children: [
           Text(
             service,
-            style: const TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           Text(
             '₱${price.toStringAsFixed(2)}',
@@ -264,5 +350,23 @@ class TransactionDetailsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatServiceLabel(String key) {
+    return key
+        .split('_')
+        .map(
+          (word) =>
+              word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : '',
+        )
+        .join(' ');
+  }
+
+  String _toSnakeCase(String input) {
+    return input
+        .trim()
+        .toLowerCase()
+        .replaceAll('&', 'and')
+        .replaceAll(RegExp(r'\s+'), '_');
   }
 }

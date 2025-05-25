@@ -17,16 +17,26 @@ class OrderDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    // Fallback customer name from orderData (to show immediately)
+    final normalizedOrderType = orderType.toLowerCase().contains('laundry')
+        ? 'laundry'
+        : orderType.toLowerCase().contains('water')
+            ? 'waterOrders'
+            : orderType.toLowerCase();
+
     final firstNameFallback = orderData['firstName']?.toString() ?? '';
     final lastNameFallback = orderData['lastName']?.toString() ?? '';
     final customerNameFallback =
         (firstNameFallback + ' ' + lastNameFallback).trim();
 
-    final status =
-        orderData['status']?.toString().toLowerCase() ?? 'processing';
+    final status = orderData['status']?.toString().toLowerCase() ?? 'processing';
 
-    // Text style
+    final extrasList = (orderData['extras'] as List<dynamic>?);
+    final availedExtras = extrasList != null
+        ? extrasList.where((e) => e.toString().trim().isNotEmpty).toList()
+        : <dynamic>[];
+
+    final containerType = orderData['containerType']?.toString() ?? '';
+
     final sectionTitleStyle = TextStyle(
       fontSize: 18,
       fontWeight: FontWeight.bold,
@@ -38,7 +48,7 @@ class OrderDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Header Section
+            // Status Header
             Container(
               decoration: BoxDecoration(
                 color: Color(0xFF4B007D),
@@ -65,7 +75,7 @@ class OrderDetailsPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 48), // To balance IconButton spacing
+                  SizedBox(width: 48),
                 ],
               ),
             ),
@@ -82,45 +92,66 @@ class OrderDetailsPage extends StatelessWidget {
                   Divider(thickness: 1),
                   SizedBox(height: 8),
 
-                  _buildDetailRow(
-                    'Service',
-                    orderData['serviceType']?.toString() ?? '',
-                  ),
-                  if (orderType == 'laundry') ...[
-                    if ((orderData['extras'] as List<dynamic>?)?.isNotEmpty ??
-                        false)
+                  if (normalizedOrderType == 'laundry') ...[
+                    if ((orderData['serviceType']?.toString().isNotEmpty ?? false))
                       _buildDetailRow(
-                        'Others',
-                        (orderData['extras'] as List<dynamic>).join(', '),
+                        'Service',
+                        orderData['serviceType'].toString(),
                       ),
-                    if (orderData['weight'] != null)
+
+                    if (availedExtras.isNotEmpty)
+                      _buildDetailRow('Others', availedExtras.join(', ')),
+
+                    if ((orderData['weight'] ?? 0) > 0)
                       _buildDetailRow('Weight', '${orderData['weight']}kg'),
+
+                    // Only show services that were actually selected
+                    if (orderData['selectedServices'] != null && 
+                        orderData['selectedServices'] is List && 
+                        (orderData['selectedServices'] as List).isNotEmpty)
+                      ...(orderData['selectedServices'] as List<dynamic>)
+                          .where((service) => 
+                              service is String && 
+                              service.trim().isNotEmpty)
+                          .map<Widget>(
+                            (service) {
+                              final price = orderData['laundryServices'] != null && 
+                                  orderData['laundryServices'] is Map && 
+                                  (orderData['laundryServices'] as Map).containsKey(service)
+                                    ? (orderData['laundryServices'] as Map)[service] ?? 0
+                                    : 0;
+                              return _buildDetailRow(
+                                service,
+                                '₱${NumberFormat('#,##0.00').format(price)}',
+                              );
+                            },
+                          ),
                   ],
-                  if (orderType == 'waterOrders') ...[
-                    if (orderData['containerType']?.toString().isNotEmpty ??
-                        false)
-                      _buildDetailRow(
-                        'Container Type',
-                        orderData['containerType'],
-                      ),
-                    if (orderData['quantity'] != null)
+
+                  if (normalizedOrderType == 'waterOrders') ...[
+                    if (containerType.isNotEmpty)
+                      _buildDetailRow('Container Type', containerType),
+
+                    if ((orderData['quantity'] ?? 0) > 0)
                       _buildDetailRow(
                         'Quantity',
                         orderData['quantity'].toString(),
                       ),
                   ],
+
                   if (orderData['deliveryMode']?.toString().isNotEmpty ?? false)
                     _buildDetailRow(
                       'Delivery Mode',
                       orderData['deliveryMode'].toString(),
                     ),
+
                   if (orderData['instructions']?.toString().isNotEmpty ?? false)
                     _buildDetailRow(
                       'Instructions',
                       orderData['instructions'].toString(),
                     ),
-                  if (orderData['paymentMethod']?.toString().isNotEmpty ??
-                      false)
+
+                  if (orderData['paymentMethod']?.toString().isNotEmpty ?? false)
                     _buildDetailRow(
                       'Payment Method',
                       orderData['paymentMethod'].toString(),
@@ -133,71 +164,50 @@ class OrderDetailsPage extends StatelessWidget {
                   Divider(thickness: 1),
                   SizedBox(height: 8),
 
-                  // Customer Name: FutureBuilder only for the name widget
                   FutureBuilder<DocumentSnapshot>(
-                    future:
-                        uid == null
-                            ? Future.value(null)
-                            : FirebaseFirestore.instance
-                                .collection('customers')
-                                .doc(uid)
-                                .get(),
+                    future: uid == null
+                        ? Future.value(null)
+                        : FirebaseFirestore.instance
+                            .collection('customers')
+                            .doc(uid)
+                            .get(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return _buildDetailRow(
-                          'Name',
-                          customerNameFallback.isNotEmpty
-                              ? customerNameFallback
-                              : 'Loading name...',
-                        );
-                      }
-                      if (snapshot.hasData && snapshot.data!.exists) {
-                        final userData =
-                            snapshot.data!.data() as Map<String, dynamic>;
-                        final firstName =
-                            orderData['firstName']?.toString() ??
-                            userData['firstName']?.toString() ??
-                            '';
-                        final lastName =
-                            orderData['lastName']?.toString() ??
-                            userData['lastName']?.toString() ??
-                            '';
-                        final customerName =
-                            (firstName + ' ' + lastName).trim();
-                        return _buildDetailRow('Name', customerName);
-                      }
+                      final customerName =
+                          snapshot.hasData && snapshot.data!.exists
+                              ? ((orderData['firstName'] ??
+                                          snapshot.data!['firstName'] ??
+                                          '') +
+                                      ' ' +
+                                      (orderData['lastName'] ??
+                                          snapshot.data!['lastName'] ??
+                                          ''))
+                                  .trim()
+                              : customerNameFallback;
                       return _buildDetailRow(
                         'Name',
-                        customerNameFallback.isNotEmpty
-                            ? customerNameFallback
+                        customerName.isNotEmpty
+                            ? customerName
                             : 'Name not available',
                       );
                     },
                   ),
 
                   FutureBuilder<DocumentSnapshot>(
-                    future:
-                        uid == null
-                            ? Future.value(null)
-                            : FirebaseFirestore.instance
-                                .collection('customers')
-                                .doc(uid)
-                                .get(),
+                    future: uid == null
+                        ? Future.value(null)
+                        : FirebaseFirestore.instance
+                            .collection('customers')
+                            .doc(uid)
+                            .get(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return _buildDetailRow('Address', 'Loading address...');
-                      }
-                      if (snapshot.hasData && snapshot.data!.exists) {
-                        final userData =
-                            snapshot.data!.data() as Map<String, dynamic>;
-                        return _buildDetailRow(
-                          'Address',
-                          _getAddress(orderData, userData),
-                        );
-                      }
                       return _buildDetailRow(
                         'Address',
-                        _getAddress(orderData, null),
+                        _getAddress(
+                          orderData,
+                          snapshot.hasData
+                              ? snapshot.data?.data() as Map<String, dynamic>?
+                              : null,
+                        ),
                       );
                     },
                   ),
@@ -222,7 +232,7 @@ class OrderDetailsPage extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          _buildFormattedTotal(orderData, orderType),
+                          _buildFormattedTotal(orderData),
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -243,12 +253,12 @@ class OrderDetailsPage extends StatelessWidget {
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 130,
             child: Text(
               label,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
@@ -266,9 +276,8 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  String _buildFormattedTotal(Map<String, dynamic> data, String orderType) {
+  String _buildFormattedTotal(Map<String, dynamic> data) {
     double total = 0;
-
     final priceRaw = data['totalPrice'] ?? data['totalAmount'];
 
     if (priceRaw is int) {
@@ -288,41 +297,22 @@ class OrderDetailsPage extends StatelessWidget {
   ) {
     final address = orderData['defaultAddress'];
 
+    Map<String, dynamic>? addressMap;
     if (address is Map) {
-      final addressMap = Map<String, dynamic>.from(address);
-      final components =
-          [
-            addressMap['street'],
-            addressMap['house'],
-            addressMap['barangay'],
-            addressMap['municipality'],
-            addressMap['city'],
-          ].where((c) => c != null && c.toString().isNotEmpty).toList();
+      addressMap = Map<String, dynamic>.from(address);
+    } else if (userData != null && userData['defaultAddress'] is Map) {
+      addressMap = Map<String, dynamic>.from(userData['defaultAddress']);
+    }
+
+    if (addressMap != null) {
+      final components = [
+        addressMap['street'],
+        addressMap['house'],
+        addressMap['barangay'],
+        addressMap['municipality'],
+        addressMap['city'],
+      ].where((c) => c != null && c.toString().isNotEmpty).toList();
       return components.join(', ');
-    }
-
-    if (address is String && address.trim().length > 10) {
-      return address;
-    }
-
-    // fallback
-    if (userData != null) {
-      final fallbackAddress = userData['defaultAddress'];
-      if (fallbackAddress is Map) {
-        final fallbackMap = Map<String, dynamic>.from(fallbackAddress);
-        final components =
-            [
-              fallbackMap['street'],
-              fallbackMap['house'],
-              fallbackMap['barangay'],
-              fallbackMap['municipality'],
-              fallbackMap['city'],
-            ].where((c) => c != null && c.toString().isNotEmpty).toList();
-        return components.join(', ');
-      } else if (fallbackAddress is String &&
-          fallbackAddress.trim().isNotEmpty) {
-        return fallbackAddress;
-      }
     }
 
     return 'No Address Provided';
