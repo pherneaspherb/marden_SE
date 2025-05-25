@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'customerLoginPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,7 +15,7 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneNumberController = TextEditingController(); // Added
+  final _phoneNumberController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -27,38 +28,28 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
 
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      print("🟣 Form validated");
 
       try {
         final email = _emailController.text.trim();
-        print("📨 Email: $email");
-
-        final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(
-          email,
-        );
-        print("📩 Sign-in methods: $methods");
+        final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
 
         if (methods.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Email is already registered')),
           );
           setState(() => _isLoading = false);
-          print("⚠️ Email already registered");
           return;
         }
 
-        print("🔐 Creating Firebase Auth user...");
         final credential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
               email: email,
               password: _passwordController.text,
             );
-        print("✅ User created: ${credential.user?.uid}");
 
         if (credential.user == null) {
           throw Exception("User creation failed — user is null");
         }
-        print("📤 Saving user info to Firestore...");
 
         await FirebaseFirestore.instance
             .collection('customers')
@@ -67,30 +58,24 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
               'firstName': _firstNameController.text.trim(),
               'lastName': _lastNameController.text.trim(),
               'email': email,
-              'phoneNumber': _phoneNumberController.text.trim(), // Added
+              'phoneNumber': _phoneNumberController.text.trim(),
               'role': 'customer',
               'createdAt': Timestamp.now(),
             });
 
-        print("📝 Customer data saved to Firestore");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign up successful')),
+        );
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Sign up successful')));
-
-        print("➡️ Navigating to CustomerMainPage...");
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => CustomerMainPage()),
           (route) => false,
         );
-        print("✅ Should be on CustomerMainPage now");
       } catch (e) {
-        print('❌ Error during sign-up: $e');
         String errorMessage = 'Something went wrong';
 
         if (e is FirebaseAuthException) {
-          print("⚠️ FirebaseAuthException: ${e.code} - ${e.message}");
           if (e.code == 'weak-password') {
             errorMessage = 'Password should be at least 6 characters';
           } else if (e.code == 'email-already-in-use') {
@@ -100,15 +85,12 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
           }
         }
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
       } finally {
         setState(() => _isLoading = false);
-        print("⏹ Loading state reset");
       }
-    } else {
-      print("❌ Form validation failed");
     }
   }
 
@@ -149,43 +131,27 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
                     _buildTextField(_firstNameController, 'First Name'),
                     _buildTextField(_lastNameController, 'Last Name'),
                     _buildTextField(_emailController, 'Email'),
-                    _buildTextField(
-                      _phoneNumberController,
-                      'Phone Number',
-                      isNumber: true,
-                    ), // Added
-                    _buildTextField(
-                      _passwordController,
-                      'Password',
-                      isPassword: true,
-                    ),
-                    _buildTextField(
-                      _confirmPasswordController,
-                      'Confirm Password',
-                      isPassword: true,
-                    ),
+                    _buildTextField(_phoneNumberController, 'Phone Number', isNumber: true),
+                    _buildTextField(_passwordController, 'Password', isPassword: true),
+                    _buildTextField(_confirmPasswordController, 'Confirm Password', isPassword: true),
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _signUp,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 40,
-                          vertical: 15,
-                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                       ),
-                      child:
-                          _isLoading
-                              ? SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : Text('Sign Up'),
+                      child: _isLoading
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text('Sign Up'),
                     ),
                   ],
                 ),
@@ -203,8 +169,7 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
     bool isPassword = false,
     bool isNumber = false,
   }) {
-    bool isObscure =
-        isPassword &&
+    bool isObscure = isPassword &&
         ((label == 'Password' && !_isPasswordVisible) ||
             (label == 'Confirm Password' && !_isConfirmPasswordVisible));
 
@@ -212,38 +177,41 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        keyboardType:
-            isNumber
-                ? TextInputType.phone
-                : (label == 'Email'
-                    ? TextInputType.emailAddress
-                    : TextInputType.text),
+        keyboardType: isNumber
+            ? TextInputType.phone
+            : (label == 'Email'
+                ? TextInputType.emailAddress
+                : TextInputType.text),
         obscureText: isObscure,
+        maxLength: isNumber ? 11 : null,
+        inputFormatters: isNumber
+            ? [FilteringTextInputFormatter.digitsOnly]
+            : null,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(),
-          suffixIcon:
-              isPassword
-                  ? IconButton(
-                    icon: Icon(
-                      (label == 'Password' && _isPasswordVisible) ||
-                              (label == 'Confirm Password' &&
-                                  _isConfirmPasswordVisible)
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        if (label == 'Password') {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        } else if (label == 'Confirm Password') {
-                          _isConfirmPasswordVisible =
-                              !_isConfirmPasswordVisible;
-                        }
-                      });
-                    },
-                  )
-                  : null,
+          counterText: "",
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    (label == 'Password' && _isPasswordVisible) ||
+                            (label == 'Confirm Password' &&
+                                _isConfirmPasswordVisible)
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      if (label == 'Password') {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      } else if (label == 'Confirm Password') {
+                        _isConfirmPasswordVisible =
+                            !_isConfirmPasswordVisible;
+                      }
+                    });
+                  },
+                )
+              : null,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) return 'Please enter $label';
@@ -257,8 +225,8 @@ class _CustomerSignUpPageState extends State<CustomerSignUpPage> {
               value != _passwordController.text) {
             return 'Passwords do not match';
           }
-          if (label == 'Phone Number' && value.length < 10) {
-            return 'Enter a valid phone number';
+          if (label == 'Phone Number' && value.length != 11) {
+            return 'Phone number must be exactly 11 digits';
           }
           return null;
         },
