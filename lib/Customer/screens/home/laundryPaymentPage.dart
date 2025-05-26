@@ -77,7 +77,7 @@ class _LaundryPaymentPageState extends State<LaundryPaymentPage> {
     }
 
     double weightCharge =
-        widget.weight * (laundryRates['per_kilogram'] ?? 0).toDouble();
+        widget.weight * (laundryRates[''] ?? 0).toDouble();
     double deliveryFee =
         (widget.deliveryMode == 'Deliver')
             ? (laundryRates['deliver'] ?? 0).toDouble()

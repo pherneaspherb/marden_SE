@@ -77,8 +77,9 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
       extras += (laundryPrices['fabric_softener'] ?? 0).toDouble();
     if (foldClothes) extras += (laundryPrices['fold'] ?? 0).toDouble();
 
-    double perKiloRate = (laundryPrices['per_kilogram'] ?? 0).toDouble();
-    double weightCharge = weight * perKiloRate;
+    // Removed weightCharge calculation
+    // double perKiloRate = (laundryPrices['per_kilogram'] ?? 0).toDouble();
+    // double weightCharge = weight * perKiloRate;
 
     double delivery =
         (deliveryMode == 'Deliver')
@@ -86,7 +87,7 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
             : 0.0;
 
     setState(() {
-      totalAmount = baseRate + weightCharge + extras + delivery;
+      totalAmount = baseRate + extras + delivery; // No weight charge here
     });
   }
 
@@ -283,7 +284,7 @@ class _LaundryHubPageState extends State<LaundryHubPage> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text(
-                '₱${(laundryPrices['per_kilogram'] ?? 0)} per kilogram (max. 7 kg)',
+                '(max. 7 kg)',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               SizedBox(height: 10),
